@@ -1,6 +1,6 @@
 # Document Renderer
 
-Document Renderer prepares print-accurate, clearly marked `VOID — SAMPLE ONLY` financial form previews with masked data and server-side integration boundaries.
+Document Renderer prepares print-accurate deposit-slip previews with protected account data, a browser-only sample watermark, and server-side integration boundaries.
 
 ## Run & Operate
 
@@ -32,7 +32,9 @@ Document Renderer prepares print-accurate, clearly marked `VOID — SAMPLE ONLY`
 
 ## Architecture decisions
 
-- The first release is permanently safe-mode: `VOID / SAMPLE ONLY`, masked account data, and no MICR output.
+- The first release defaults to browser preview mode with `SAMPLE / VOID`, while print output removes that browser-only watermark.
+- Account data remains protected in the UI and preview; print mode includes the mapped MICR E-13B line.
+- GnuMICR is bundled locally and inlined as Base64 at build time; its GPL license is stored beside the font asset.
 - The frontend and PDF boundary consume one typed OpenAPI contract; generated hooks are the only client API surface.
 - External provider credentials stay server-side. Missing credentials are represented as readiness state, not silent fallbacks.
 - Routing numbers receive local ABA checksum validation before any future directory lookup.
@@ -40,7 +42,7 @@ Document Renderer prepares print-accurate, clearly marked `VOID — SAMPLE ONLY`
 
 ## Product
 
-Users enter sample recipient, bank, and document data while a physical-size preview updates in place. The workspace reports provider readiness, supports address autocomplete when configured, validates routing numbers locally, masks account data, and keeps PDF export behind an explicit server-renderer boundary.
+Users enter deposit-slip recipient, bank, and document data while a physical-size preview updates in place. The workspace reports provider readiness, supports address autocomplete when configured, validates routing numbers locally, masks account data, and keeps PDF export behind an explicit server-renderer boundary.
 
 ## User preferences
 
@@ -50,7 +52,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 - `GOOGLE_MAPS_API_KEY` is intentionally optional; without it, address autocomplete returns a clear not-configured state.
 - The current routing adapter validates ABA checksums but does not claim bank ownership or return bank metadata.
-- Browser print is the current available output path; server PDF export remains disabled until its renderer is configured.
+- Browser print is the current available output path; it strips the browser-only sample watermark while preserving the document geometry. Server PDF export remains disabled until its renderer is configured.
+- MICR output uses the supplied A / C / D delimiter mapping; bank-equipment scan validation is still required before production use.
 - After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen` before using generated hooks or Zod schemas.
 
 ## Pointers

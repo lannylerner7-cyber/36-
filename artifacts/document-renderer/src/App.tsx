@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import micrFontData from './assets/GnuMICR.ttf?inline';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -20,6 +21,8 @@ import {
   Check,
   CheckCircle2,
   ClipboardCheck,
+  Eye,
+  EyeOff,
   FileDown,
   Info,
   Landmark,
@@ -55,6 +58,7 @@ function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [routingMessage, setRoutingMessage] = useState('');
   const [pdfMessage, setPdfMessage] = useState('');
+  const [isPreviewMode, setIsPreviewMode] = useState(true);
 
   const integrations = useGetIntegrationStatus();
   const health = useHealthCheck();
@@ -116,7 +120,7 @@ function Home() {
             </div>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[.22em] text-sidebar-foreground/60">Operations / document lab</p>
-              <h1 className="text-[15px] font-bold tracking-tight">Sample document renderer</h1>
+              <h1 className="text-[15px] font-bold tracking-tight">Deposit slip renderer</h1>
             </div>
           </div>
           <div className="hidden items-center gap-5 sm:flex">
@@ -142,8 +146,13 @@ function Home() {
 
           <div className="mb-7 grid grid-cols-2 gap-2">
             <SafetyPill icon={<ShieldCheck size={15} />} label="Account masked" />
-            <SafetyPill icon={<ClipboardCheck size={15} />} label="No MICR output" />
+            <SafetyPill icon={<ClipboardCheck size={15} />} label="Account protected" />
           </div>
+
+          <button type="button" onClick={() => setIsPreviewMode((current) => !current)} className="mb-7 flex w-full items-center justify-between rounded-md border border-border bg-card/60 px-3 py-2.5 text-left transition hover:bg-muted" data-testid="toggle-preview-mode" aria-pressed={isPreviewMode}>
+            <span className="flex items-center gap-2 text-[11px] font-semibold text-foreground">{isPreviewMode ? <Eye size={15} className="text-accent" /> : <EyeOff size={15} className="text-accent" />} Browser preview watermark</span>
+            <span className={`rounded-full px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${isPreviewMode ? 'bg-amber-100 text-amber-900' : 'bg-secondary text-secondary-foreground'}`}>{isPreviewMode ? 'On' : 'Off'}</span>
+          </button>
 
           <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
             <FieldGroup label="Recipient & bank" number="A">
@@ -215,7 +224,7 @@ function Home() {
                 <span className="mt-1 block">No production negotiability</span>
               </div>
             </div>
-             <DocumentPreview form={form} maskedAccount={accountMasked} />
+             <DocumentPreview form={form} maskedAccount={accountMasked} isPreviewMode={isPreviewMode} />
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <IntegrationPanel data={integrations.data?.places} label="Places / address suggestions" icon={<MapPin size={16} />} loading={integrations.isLoading} />
               <IntegrationPanel data={integrations.data?.routing} label="Routing / bank validation" icon={<Landmark size={16} />} loading={integrations.isLoading} />
@@ -225,7 +234,7 @@ function Home() {
                 {integrations.isError ? <p className="text-xs leading-5 text-destructive" data-testid="status-integration-error">Integration status could not be loaded. Refresh to retry.</p> : <p className="text-xs leading-5 text-muted-foreground">Only configured providers can make external requests. Sample rendering remains visibly marked at every boundary.</p>}
               </div>
             </div>
-            <p className="mt-6 flex items-start gap-2 text-[11px] leading-5 text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-accent" /> Print-safe note: this preview intentionally omits MICR encoding and keeps account data masked. It is designed for review, QA, and integration testing only.</p>
+             <p className="mt-6 flex items-start gap-2 text-[11px] leading-5 text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-accent" /> Print-safe note: browser preview masks MICR values; print mode uses the locally bundled GnuMICR E-13B font. Use only with an authorized deposit-slip workflow.</p>
           </div>
         </section>
       </div>
@@ -245,18 +254,29 @@ function TextField({ id, label, value, onChange, placeholder, type = 'text', hel
   return <label className="block" htmlFor={id}><span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">{label}{required && <span className="ml-1 text-accent" aria-hidden="true">*</span>}</span><input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} onFocus={onFocus} onKeyDown={onKeyDown} placeholder={placeholder} inputMode={inputMode} required={required} min={min} step={step} className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground/55 hover:border-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15" data-testid={`input-${id}`} />{helper && <span className="mt-1 block font-mono text-[9px] leading-4 text-muted-foreground">{helper}</span>}</label>;
 }
 
-function DocumentPreview({ form, maskedAccount }: { form: SampleDocumentInput; maskedAccount: string }) {
+function DocumentPreview({ form, maskedAccount, isPreviewMode }: { form: SampleDocumentInput; maskedAccount: string; isPreviewMode: boolean }) {
+  const routingNumber = form.routingNumber || '000000000';
+  const accountNumber = form.accountNumber || '000000000000';
+  const checkNumber = form.checkNumber || '00000';
+  const micrValue = `A${routingNumber}A ${accountNumber}C ${checkNumber}D`;
+  const maskedMicrValue = 'A•••••••••A ••••••••••••C •••••D';
+
   return <div className="relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[3px] border border-[#cbc6b9] bg-[#f8f5eb] p-[3.7%] text-[#292b31] document-shadow" style={{ aspectRatio: '6 / 2.75' }} data-testid="preview-document">
+    <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
     <div className="pointer-events-none absolute inset-[2.5%] border border-[#d8d2c3]" />
-    <div className="absolute left-[4.5%] top-[10%] font-mono text-[clamp(7px,1.3vw,12px)] font-medium tracking-[.15em]">SAMPLE FINANCIAL INSTRUMENT</div>
+    <div className="absolute left-[4.5%] top-[10%] font-mono text-[clamp(7px,1.3vw,12px)] font-medium tracking-[.15em]">SAMPLE DEPOSIT SLIP</div>
     <div className="absolute right-[5%] top-[8%] text-right font-mono text-[clamp(7px,1.3vw,12px)]"><div>NO. {form.checkNumber || '——'}</div><div className="mt-1 border-t border-[#77736b] pt-1 text-[.78em]">{form.date || 'DATE ———'}</div></div>
     <div className="absolute left-[4.5%] top-[27%] max-w-[35%] text-[clamp(7px,1.45vw,13px)] leading-tight"><div className="mb-1 font-mono text-[.65em] uppercase tracking-wider text-[#77736b]">Pay to the order of</div><div className="border-b border-[#77736b] pb-1 font-semibold">{form.payeeName || 'Payee name'}</div></div>
     <div className="absolute right-[5%] top-[27%] w-[28%] text-right text-[clamp(8px,1.75vw,16px)] font-semibold"><span className="mr-1 text-[.7em]">$</span>{form.amount === null || Number.isNaN(form.amount) ? '—' : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
     <div className="absolute left-[4.5%] top-[49%] max-w-[45%] border-t border-[#77736b] pt-1 text-[clamp(6px,1.2vw,11px)] leading-tight"><div className="font-semibold">{form.bankAddress || 'Bank address will appear here'}</div><div className="mt-1 font-mono text-[.74em] text-[#77736b]">ROUTING {form.routingNumber ? `${form.routingNumber.slice(0, 3)} ••••••` : '•••••••••'}</div></div>
     <div className="absolute right-[5%] top-[49%] text-right font-mono text-[clamp(6px,1.2vw,11px)]"><div className="text-[#77736b]">ACCOUNT</div><div className="mt-1 font-semibold">{maskedAccount}</div></div>
     <div className="absolute bottom-[14%] left-[4.5%] max-w-[48%] border-t border-[#77736b] pt-1 text-[clamp(6px,1.15vw,10px)]"><span className="mr-1 font-mono text-[.78em] text-[#77736b]">MEMO</span>{form.memo || '—'}</div>
+    <div className={`absolute bottom-[3.2%] left-[4.5%] font-mono text-[clamp(7px,1.25vw,12px)] tracking-[.1em] micr-line ${isPreviewMode ? 'text-[#77736b]' : 'text-[#292b31]'}`} aria-label="MICR E-13B line">
+      <span className="screen-micr">{isPreviewMode ? maskedMicrValue : micrValue}</span>
+      <span className="print-micr">{micrValue}</span>
+    </div>
     <div className="absolute bottom-[8%] right-[5%] flex items-center gap-1.5 font-mono text-[clamp(6px,1.1vw,10px)] text-[#a4422e]"><span className="h-1.5 w-1.5 rounded-full bg-[#a4422e]" />VOID / SAMPLE ONLY</div>
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="rotate-[-12deg] select-none font-mono text-[clamp(16px,5vw,48px)] font-bold tracking-[.16em] text-[#a4422e]/[.12]">VOID</div></div>
+    {isPreviewMode && <div className="preview-watermark pointer-events-none absolute inset-0 flex items-center justify-center" data-preview-watermark><div className="rotate-[-12deg] select-none font-mono text-[clamp(16px,5vw,48px)] font-bold tracking-[.16em] text-[#a4422e]/[.12]">SAMPLE / VOID</div></div>}
   </div>;
 }
 

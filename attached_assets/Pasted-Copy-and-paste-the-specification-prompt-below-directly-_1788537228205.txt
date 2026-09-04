@@ -1,0 +1,73 @@
+Copy and paste the specification prompt below directly into Replit AI to build the application with real-time state synchronization, automated MICR encoding, and accurate DOM layout targeting.
+Master Prompt for Replit AI
+Build a full-stack Next.js (TypeScript) application styled with Tailwind CSS that allows users to create, preview, and print standardized US Bank DDA Mail-In Deposit Slips matching an exact visual grid layout.
+1. React State & Form Inputs
+Maintain a centralized reactive state (depositSlipData) that updates a side-by-side Live Deposit Slip Preview instantly as the user types:
+ * routingNumber (9 digits) \rightarrow Triggers auto-fetch for bankName and srcLogo.
+ * bankAddress (Physical/Lockbox Address, auto-suggested via Google Places or Nominatim).
+ * depositDate (Defaults to today's date).
+ * accountNumber (Payee DDA Account Number).
+ * payeeName (Account holder or business name).
+ * checkNumber (e.g., "105").
+ * checkDate (Date on check).
+ * checkAmount (Numeric, formatted as currency $ 1,250.00).
+ * memo / reference (e.g., "Invoice #5567 - Q3 Consulting").
+2. Visual Layout Specification (Strict DOM / CSS Structure)
+Render a boxed container sized at 8.0" x 3.75" (or responsive proportional container with @media print locked dimensions):
+ * Top Header Section (3 Columns):
+   * Top Left (Logo Container): Displays uploaded or fetched srcLogo inside a bordered box (2.2in x 1.1in).
+   * Top Center (Bank Info): Displays bankName in bold serif/sans font, ATTN: MAIL-IN DEPOSITS, and bankAddress on separate lines. Positioned so it aligns with standard #9/#10 double-window envelopes.
+   * Top Right (Bordered Grid Box):
+     * Row 1: DATE: [depositDate]
+     * Row 2: ROUTING NUMBER: [routingNumber]
+     * Row 3: DDA ACCOUNT NUMBER: [accountNumber]
+ * Main Body Grid (Black Outer & Inner Borders):
+   * Row 1: DEPOSIT TO (PAYEE): labeled header with [payeeName] in bold uppercase.
+   * Row 2 (3 Columns):
+     * Col 1: CHECK NUMBER: [checkNumber]
+     * Col 2: CHECK DATE: [checkDate]
+     * Col 3: CHECK AMOUNT: $[checkAmount]
+   * Row 3: REFERENCE / NOTE: header with [memo].
+ * Total Deposit Box (Bottom Right):
+   * Bordered box containing label TOTAL DEPOSIT and formatted currency $[checkAmount].
+ * Bottom MICR Encoding Line:
+   * Centered at the very bottom of the slip using the MICR-E13B font family.
+3. MICR Engine Implementation Logic
+Implement a backend utility function that formats the standard ANSI X3.2 E-13B MICR line.
+// Glyphs: 'A' or '⑆' = Transit Symbol | 'C' or '⑈' = On-Us Symbol
+export function generateMICRLine(routing: string, account: string, checkNum: string): string {
+  const cleanRouting = routing.replace(/\D/g, '');
+  const cleanAccount = account.replace(/\D/g, '');
+  const cleanCheck = checkNum.replace(/\D/g, '');
+
+  if (cleanRouting.length !== 9) return '';
+
+  // Standard E-13B String Sequence: ⑆[Routing]⑆ [Account]⑈ [CheckNumber]⑈
+  return `A${cleanRouting}A ${cleanAccount}C ${cleanCheck}C`;
+}
+
+4. CSS Print Engine & Font Setup
+Add Base64 embedded font loading inside globals.css so print/PDF routines don't fail:
+@font-face {
+  font-family: 'MICR-E13B';
+  src: url('/fonts/micr-e13b.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #deposit-slip-preview, #deposit-slip-preview * {
+    visibility: visible;
+  }
+  #deposit-slip-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+  }
+}
+

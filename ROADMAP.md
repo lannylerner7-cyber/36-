@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-Document Renderer is a print-accurate, non-negotiable financial form workspace. The first production milestone is a clearly marked `VOID — SAMPLE ONLY` document with masked account data. It must not create, imitate, or output a usable negotiable instrument.
+Document Renderer is a print-accurate deposit-slip workspace. Deposit slips are bank-processing vouchers rather than negotiable checks; the renderer still protects account data and keeps an explicit browser preview mode so print behavior is deliberate.
 
 ## Current milestone — printable sample renderer
 
@@ -10,12 +10,16 @@ Document Renderer is a print-accurate, non-negotiable financial form workspace. 
 
 - [x] Responsive data-entry workspace
 - [x] Live 6 in × 2.75 in document preview
-- [x] `VOID — SAMPLE ONLY` watermark and safety messaging
+- [x] `SAMPLE / VOID` browser preview watermark and safety messaging
+- [x] Preview-mode toggle that removes the watermark from print output
 - [x] Form validation for routing number, account number, payee, date, amount, memo, and check number
 - [x] Account-number masking in the preview and UI
 - [x] Integration readiness status in the UI
 - [x] Typed API contract and server routes
 - [x] Browser print styles with exact physical dimensions
+- [x] Local GnuMICR E-13B font asset with adjacent GPL license notice
+- [x] Build-time inline Base64 font embedding
+- [x] MICR line mapping for routing, account, check, and delimiter symbols
 
 ### In progress
 
@@ -53,8 +57,9 @@ Document Renderer is a print-accurate, non-negotiable financial form workspace. 
 - [ ] Fixed internal size of 6 in × 2.75 in
 - [ ] Responsive scaling without changing document geometry
 - [ ] Overflow and long-text handling
-- [ ] Safe watermark always visible
+- [x] Browser preview watermark with print-only removal
 - [ ] No bank-authenticating logos in sample mode
+- [ ] Validate printed MICR output against authorized target equipment
 
 ### Address integration
 
@@ -108,7 +113,7 @@ Document Renderer is a print-accurate, non-negotiable financial form workspace. 
 3. Full account numbers are never shown in the rendered document.
 4. Missing integrations produce an actionable, non-breaking setup state.
 5. Invalid routing numbers are rejected before provider lookup.
-6. The document cannot be mistaken for an active check because the VOID / SAMPLE marking is persistent.
+6. Browser preview clearly indicates `SAMPLE / VOID`; print mode removes only the browser watermark and retains the deposit-slip safety label.
 7. The roadmap is updated whenever a feature is completed, deferred, or blocked.
 
 ## Later milestones
@@ -124,6 +129,7 @@ Document Renderer is a print-accurate, non-negotiable financial form workspace. 
 
 - [ ] Confirm business use case and authorization for any negotiable instrument output
 - [ ] Review applicable banking, payments, fraud-prevention, and record-retention requirements
-- [ ] Obtain approval for MICR assets and any bank branding
+- [x] Record the GnuMICR GPL license beside the local font asset
+- [ ] Confirm MICR dimensions and scan behavior with the intended bank/equipment
 - [ ] Define authentication, user roles, audit trail, and secure storage
 - [ ] Only then revisit production document output scope
