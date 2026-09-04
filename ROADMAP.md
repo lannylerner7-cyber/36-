@@ -20,6 +20,7 @@ Document Renderer is a print-accurate deposit-slip workspace. Deposit slips are 
 - [x] Local GnuMICR E-13B font asset with adjacent GPL license notice
 - [x] Build-time inline Base64 font embedding
 - [x] MICR line mapping for routing, account, check, and delimiter symbols
+- [x] Reference-matched deposit-slip layout with logo, metadata, payee, check details, note, total, and perforated edge
 
 ### In progress
 

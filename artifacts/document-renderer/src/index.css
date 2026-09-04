@@ -127,7 +127,22 @@
     linear-gradient(90deg, hsl(40 15% 83% / .34) 1px, transparent 1px);
   background-size: 18px 18px;
 }
-.document-shadow { box-shadow: 18px 22px 40px rgba(37, 39, 48, .18), 0 2px 5px rgba(37, 39, 48, .12); }
+.document-shadow { box-shadow: 16px 20px 38px rgba(52, 56, 52, .16), 0 2px 4px rgba(52, 56, 52, .13); }
+.document-slip { isolation: isolate; }
+.document-slip::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 1.8%;
+  pointer-events: none;
+  background: radial-gradient(circle at 0 50%, transparent 0 42%, #b8b8ae 45% 56%, transparent 60%) 0 0 / 100% 7% repeat-y;
+  opacity: .72;
+}
+.perforation-edge {
+  border-left: 1px solid #b8b8ae;
+  background: repeating-linear-gradient(to bottom, transparent 0 4%, #b8b8ae 4.5% 5.3%, transparent 5.8% 9%);
+  opacity: .7;
+}
 .micr-line { font-family: 'GnuMICR', monospace; white-space: nowrap; line-height: 1; }
 .print-micr { display: none; }
 

@@ -260,23 +260,62 @@ function DocumentPreview({ form, maskedAccount, isPreviewMode }: { form: SampleD
   const checkNumber = form.checkNumber || '00000';
   const micrValue = `A${routingNumber}A ${accountNumber}C ${checkNumber}D`;
   const maskedMicrValue = 'A•••••••••A ••••••••••••C •••••D';
+  const amountLabel = form.amount === null || Number.isNaN(form.amount)
+    ? '—'
+    : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const addressLines = (form.bankAddress || 'PO BOX 12345, NEW YORK, NY 10116-1234')
+    .split(',')
+    .map((line) => line.trim())
+    .filter(Boolean);
 
-  return <div className="relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[3px] border border-[#cbc6b9] bg-[#f8f5eb] p-[3.7%] text-[#292b31] document-shadow" style={{ aspectRatio: '6 / 2.75' }} data-testid="preview-document">
+  return <div className="relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '6 / 2.75' }} data-testid="preview-document">
     <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
-    <div className="pointer-events-none absolute inset-[2.5%] border border-[#d8d2c3]" />
-    <div className="absolute left-[4.5%] top-[10%] font-mono text-[clamp(7px,1.3vw,12px)] font-medium tracking-[.15em]">SAMPLE DEPOSIT SLIP</div>
-    <div className="absolute right-[5%] top-[8%] text-right font-mono text-[clamp(7px,1.3vw,12px)]"><div>NO. {form.checkNumber || '——'}</div><div className="mt-1 border-t border-[#77736b] pt-1 text-[.78em]">{form.date || 'DATE ———'}</div></div>
-    <div className="absolute left-[4.5%] top-[27%] max-w-[35%] text-[clamp(7px,1.45vw,13px)] leading-tight"><div className="mb-1 font-mono text-[.65em] uppercase tracking-wider text-[#77736b]">Pay to the order of</div><div className="border-b border-[#77736b] pb-1 font-semibold">{form.payeeName || 'Payee name'}</div></div>
-    <div className="absolute right-[5%] top-[27%] w-[28%] text-right text-[clamp(8px,1.75vw,16px)] font-semibold"><span className="mr-1 text-[.7em]">$</span>{form.amount === null || Number.isNaN(form.amount) ? '—' : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-    <div className="absolute left-[4.5%] top-[49%] max-w-[45%] border-t border-[#77736b] pt-1 text-[clamp(6px,1.2vw,11px)] leading-tight"><div className="font-semibold">{form.bankAddress || 'Bank address will appear here'}</div><div className="mt-1 font-mono text-[.74em] text-[#77736b]">ROUTING {form.routingNumber ? `${form.routingNumber.slice(0, 3)} ••••••` : '•••••••••'}</div></div>
-    <div className="absolute right-[5%] top-[49%] text-right font-mono text-[clamp(6px,1.2vw,11px)]"><div className="text-[#77736b]">ACCOUNT</div><div className="mt-1 font-semibold">{maskedAccount}</div></div>
-    <div className="absolute bottom-[14%] left-[4.5%] max-w-[48%] border-t border-[#77736b] pt-1 text-[clamp(6px,1.15vw,10px)]"><span className="mr-1 font-mono text-[.78em] text-[#77736b]">MEMO</span>{form.memo || '—'}</div>
-    <div className={`absolute bottom-[3.2%] left-[4.5%] font-mono text-[clamp(7px,1.25vw,12px)] tracking-[.1em] micr-line ${isPreviewMode ? 'text-[#77736b]' : 'text-[#292b31]'}`} aria-label="MICR E-13B line">
+    <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
+    <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
+
+    <div className="absolute left-[7.5%] top-[7.5%] flex h-[26%] w-[13%] items-center justify-center border border-[#282a25] bg-[#f8f8f0] text-center">
+      <span className="text-[clamp(9px,2vw,19px)] font-black leading-[.95] tracking-[-.06em]">SRC<br />LOGO</span>
+    </div>
+    <div className="absolute left-[23%] top-[8.3%] w-[37%] text-[clamp(7px,1.55vw,14px)] leading-[1.12]">
+      <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">SRC CLEARING &amp; CO.</div>
+      <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
+      {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
+      {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}
+    </div>
+
+    <div className="absolute right-[6.3%] top-[7.5%] w-[34%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(6px,1.22vw,11px)] leading-none">
+      <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DATE:</span><span className="px-[5%] py-[5%]">{form.date || '—'}</span></div>
+      <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">ROUTING NUMBER:</span><span className="px-[5%] py-[5%]">{form.routingNumber || '—'}</span></div>
+      <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{maskedAccount}</span></div>
+    </div>
+
+    <div className="absolute left-[7.5%] top-[42%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
+      <div className="border-b border-[#282a25] px-[2.2%] py-[1.7%]">
+        <div className="text-[.78em] font-semibold">DEPOSIT TO (PAYEE):</div>
+        <div className="mt-[1.7%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
+      </div>
+      <div className="grid grid-cols-[31%_31%_38%] border-b border-[#282a25]">
+        <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
+        <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || '—'}</div></div>
+        <div className="px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK AMOUNT:</div><div className="mt-[3%]"><span className="mr-[8%]">$</span>{amountLabel}</div></div>
+      </div>
+      <div className="min-h-[22%] px-[2.2%] py-[2.5%]">
+        <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
+        <div className="mt-[2%]">{form.memo || '—'}</div>
+      </div>
+    </div>
+
+    <div className="absolute right-[6.3%] top-[58%] w-[20%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.35vw,12px)] leading-none">
+      <div className="border-b border-[#282a25] px-[6%] py-[7%] font-semibold">TOTAL DEPOSIT</div>
+      <div className="px-[6%] py-[10%]"><span className="mr-[14%]">$</span>{amountLabel}</div>
+    </div>
+
+    <div className={`absolute bottom-[6.5%] left-1/2 -translate-x-1/2 font-mono text-[clamp(8px,1.5vw,14px)] tracking-[.1em] micr-line ${isPreviewMode ? 'text-[#777a70]' : 'text-[#161714]'}`} aria-label="MICR E-13B line">
       <span className="screen-micr">{isPreviewMode ? maskedMicrValue : micrValue}</span>
       <span className="print-micr">{micrValue}</span>
     </div>
-    <div className="absolute bottom-[8%] right-[5%] flex items-center gap-1.5 font-mono text-[clamp(6px,1.1vw,10px)] text-[#a4422e]"><span className="h-1.5 w-1.5 rounded-full bg-[#a4422e]" />VOID / SAMPLE ONLY</div>
-    {isPreviewMode && <div className="preview-watermark pointer-events-none absolute inset-0 flex items-center justify-center" data-preview-watermark><div className="rotate-[-12deg] select-none font-mono text-[clamp(16px,5vw,48px)] font-bold tracking-[.16em] text-[#a4422e]/[.12]">SAMPLE / VOID</div></div>}
+    <div className="absolute bottom-[3.5%] right-[6.3%] font-mono text-[clamp(5px,1vw,9px)] tracking-[.08em] text-[#8d3d31]">VOID / SAMPLE ONLY</div>
+    {isPreviewMode && <div className="preview-watermark pointer-events-none absolute inset-0 flex items-center justify-center" data-preview-watermark><div className="rotate-[-12deg] select-none font-mono text-[clamp(16px,5vw,48px)] font-bold tracking-[.16em] text-[#8d3d31]/[.11]">SAMPLE / VOID</div></div>}
   </div>;
 }
 
