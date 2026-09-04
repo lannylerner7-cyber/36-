@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import micrFontData from './assets/GnuMICR.ttf?inline';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -66,11 +66,6 @@ function Home() {
   const routing = useLookupRoutingNumber();
   const pdf = useRenderSamplePdf();
   const suggestions = autocomplete.data?.suggestions ?? [];
-  const accountMasked = useMemo(() => {
-    const value = form.accountNumber.replace(/\s/g, '');
-    return value ? `•••• ${value.slice(-4).padStart(4, '•')}` : '•••• ••••';
-  }, [form.accountNumber]);
-
   const setField = <K extends keyof SampleDocumentInput>(key: K, value: SampleDocumentInput[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
@@ -145,7 +140,7 @@ function Home() {
           </div>
 
           <div className="mb-7 grid grid-cols-2 gap-2">
-            <SafetyPill icon={<ShieldCheck size={15} />} label="Account masked" />
+            <SafetyPill icon={<ShieldCheck size={15} />} label="Account visible" />
             <SafetyPill icon={<ClipboardCheck size={15} />} label="Account protected" />
           </div>
 
@@ -191,7 +186,7 @@ function Home() {
                  <TextField id="date" label="Date" value={form.date} onChange={(value) => setField('date', value)} type="date" required />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                 <TextField id="accountNumber" label="Account number" value={form.accountNumber} onChange={(value) => setField('accountNumber', value.replace(/\D/g, '').slice(0, 30))} placeholder="Digits only" inputMode="numeric" helper="Stored in memory only; preview is masked." required />
+                 <TextField id="accountNumber" label="Account number" value={form.accountNumber} onChange={(value) => setField('accountNumber', value.replace(/\D/g, '').slice(0, 30))} placeholder="Digits only" inputMode="numeric" helper="Stored in memory only; preview matches the entered value." required />
                  <TextField id="amount" label="Amount" value={form.amount === null ? '' : String(form.amount)} onChange={(value) => setField('amount', value === '' ? null : Number(value))} placeholder="0.00" inputMode="decimal" min="0" step="0.01" required />
               </div>
                <TextField id="memo" label="Memo" value={form.memo} onChange={(value) => setField('memo', value)} placeholder="VOID — SAMPLE ONLY" required />
@@ -224,7 +219,7 @@ function Home() {
                 <span className="mt-1 block">No production negotiability</span>
               </div>
             </div>
-             <DocumentPreview form={form} maskedAccount={accountMasked} isPreviewMode={isPreviewMode} />
+             <DocumentPreview form={form} isPreviewMode={isPreviewMode} />
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <IntegrationPanel data={integrations.data?.places} label="Places / address suggestions" icon={<MapPin size={16} />} loading={integrations.isLoading} />
               <IntegrationPanel data={integrations.data?.routing} label="Routing / bank validation" icon={<Landmark size={16} />} loading={integrations.isLoading} />
@@ -234,7 +229,7 @@ function Home() {
                 {integrations.isError ? <p className="text-xs leading-5 text-destructive" data-testid="status-integration-error">Integration status could not be loaded. Refresh to retry.</p> : <p className="text-xs leading-5 text-muted-foreground">Only configured providers can make external requests. Sample rendering remains visibly marked at every boundary.</p>}
               </div>
             </div>
-             <p className="mt-6 flex items-start gap-2 text-[11px] leading-5 text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-accent" /> Print-safe note: browser preview masks MICR values; print mode uses the locally bundled GnuMICR E-13B font. Use only with an authorized deposit-slip workflow.</p>
+             <p className="mt-6 flex items-start gap-2 text-[11px] leading-5 text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-accent" /> Print-safe note: account and MICR values remain visible exactly as entered; print mode uses the locally bundled GnuMICR E-13B font. Use only with an authorized deposit-slip workflow.</p>
           </div>
         </section>
       </div>
@@ -254,12 +249,11 @@ function TextField({ id, label, value, onChange, placeholder, type = 'text', hel
   return <label className="block" htmlFor={id}><span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">{label}{required && <span className="ml-1 text-accent" aria-hidden="true">*</span>}</span><input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} onFocus={onFocus} onKeyDown={onKeyDown} placeholder={placeholder} inputMode={inputMode} required={required} min={min} step={step} className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground/55 hover:border-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15" data-testid={`input-${id}`} />{helper && <span className="mt-1 block font-mono text-[9px] leading-4 text-muted-foreground">{helper}</span>}</label>;
 }
 
-function DocumentPreview({ form, maskedAccount, isPreviewMode }: { form: SampleDocumentInput; maskedAccount: string; isPreviewMode: boolean }) {
+function DocumentPreview({ form, isPreviewMode }: { form: SampleDocumentInput; isPreviewMode: boolean }) {
   const routingNumber = form.routingNumber || '000000000';
   const accountNumber = form.accountNumber || '000000000000';
   const checkNumber = form.checkNumber || '00000';
   const micrValue = `A${routingNumber}A ${accountNumber}C ${checkNumber}D`;
-  const maskedMicrValue = 'A•••••••••A ••••••••••••C •••••D';
   const amountLabel = form.amount === null || Number.isNaN(form.amount)
     ? '—'
     : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -286,7 +280,7 @@ function DocumentPreview({ form, maskedAccount, isPreviewMode }: { form: SampleD
     <div className="absolute right-[6.3%] top-[7.5%] w-[34%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(6px,1.22vw,11px)] leading-none">
       <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DATE:</span><span className="px-[5%] py-[5%]">{form.date || '—'}</span></div>
       <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">ROUTING NUMBER:</span><span className="px-[5%] py-[5%]">{form.routingNumber || '—'}</span></div>
-      <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{maskedAccount}</span></div>
+      <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{accountNumber}</span></div>
     </div>
 
     <div className="absolute left-[7.5%] top-[42%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
@@ -311,7 +305,7 @@ function DocumentPreview({ form, maskedAccount, isPreviewMode }: { form: SampleD
     </div>
 
     <div className={`absolute bottom-[6.5%] left-1/2 -translate-x-1/2 font-mono text-[clamp(8px,1.5vw,14px)] tracking-[.1em] micr-line ${isPreviewMode ? 'text-[#777a70]' : 'text-[#161714]'}`} aria-label="MICR E-13B line">
-      <span className="screen-micr">{isPreviewMode ? maskedMicrValue : micrValue}</span>
+      <span className="screen-micr">{micrValue}</span>
       <span className="print-micr">{micrValue}</span>
     </div>
     <div className="absolute bottom-[3.5%] right-[6.3%] font-mono text-[clamp(5px,1vw,9px)] tracking-[.08em] text-[#8d3d31]">VOID / SAMPLE ONLY</div>

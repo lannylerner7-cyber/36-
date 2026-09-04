@@ -13,7 +13,7 @@ Document Renderer is a print-accurate deposit-slip workspace. Deposit slips are 
 - [x] `SAMPLE / VOID` browser preview watermark and safety messaging
 - [x] Preview-mode toggle that removes the watermark from print output
 - [x] Form validation for routing number, account number, payee, date, amount, memo, and check number
-- [x] Account-number masking in the preview and UI
+- [x] Account number is visible exactly as entered in the preview and UI
 - [x] Integration readiness status in the UI
 - [x] Typed API contract and server routes
 - [x] Browser print styles with exact physical dimensions
@@ -42,7 +42,7 @@ Document Renderer is a print-accurate deposit-slip workspace. Deposit slips are 
 
 - [ ] Routing number: exactly 9 digits and ABA checksum validation
 - [ ] Physical bank address with helper note
-- [ ] Account number / DDA with masked display
+- [x] Account number / DDA with entered-value display
 - [ ] Routine-number terminology resolved or removed
 - [ ] Payee / account holder name
 - [ ] Check number
