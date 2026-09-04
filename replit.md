@@ -1,6 +1,6 @@
-# [Project name]
+# Document Renderer
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Document Renderer prepares print-accurate, clearly marked `VOID — SAMPLE ONLY` financial form previews with masked data and server-side integration boundaries.
 
 ## Run & Operate
 
@@ -10,6 +10,7 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Optional secret: `GOOGLE_MAPS_API_KEY` — enables Google Places address suggestions through the API server
 
 ## Stack
 
@@ -22,15 +23,24 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `ROADMAP.md` — feature scope, delivery checklist, blocked integrations, and definition of done
+- `lib/api-spec/openapi.yaml` — source of truth for API contracts
+- `artifacts/api-server/src/lib/integrations.ts` — provider adapters and safe routing validation
+- `artifacts/api-server/src/routes/` — Express route handlers
+- `artifacts/document-renderer/src/App.tsx` — editor and live physical preview
+- `artifacts/document-renderer/src/index.css` — application theme and print surface styling
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first release is permanently safe-mode: `VOID / SAMPLE ONLY`, masked account data, and no MICR output.
+- The frontend and PDF boundary consume one typed OpenAPI contract; generated hooks are the only client API surface.
+- External provider credentials stay server-side. Missing credentials are represented as readiness state, not silent fallbacks.
+- Routing numbers receive local ABA checksum validation before any future directory lookup.
+- The renderer's internal paper geometry is fixed at 6 in × 2.75 in; responsive scaling changes presentation, not document dimensions.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Users enter sample recipient, bank, and document data while a physical-size preview updates in place. The workspace reports provider readiness, supports address autocomplete when configured, validates routing numbers locally, masks account data, and keeps PDF export behind an explicit server-renderer boundary.
 
 ## User preferences
 
@@ -38,7 +48,10 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- `GOOGLE_MAPS_API_KEY` is intentionally optional; without it, address autocomplete returns a clear not-configured state.
+- The current routing adapter validates ABA checksums but does not claim bank ownership or return bank metadata.
+- Browser print is the current available output path; server PDF export remains disabled until its renderer is configured.
+- After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen` before using generated hooks or Zod schemas.
 
 ## Pointers
 

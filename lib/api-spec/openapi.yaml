@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: integrations
+    description: External provider readiness and lookup operations
+  - name: documents
+    description: Safe sample document rendering operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,84 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /integrations/status:
+    get:
+      operationId: getIntegrationStatus
+      tags: [integrations]
+      summary: Get external integration readiness
+      responses:
+        "200":
+          description: Integration readiness
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationStatus"
+  /places/autocomplete:
+    post:
+      operationId: autocompletePlace
+      tags: [integrations]
+      summary: Suggest physical addresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceAutocompleteInput"
+      responses:
+        "200":
+          description: Address suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceAutocompleteResponse"
+        "503":
+          description: Google Places is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /routing/lookup:
+    post:
+      operationId: lookupRoutingNumber
+      tags: [integrations]
+      summary: Validate a routing number and return bank metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutingLookupInput"
+      responses:
+        "200":
+          description: Routing validation and bank metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingLookupResponse"
+        "400":
+          description: Invalid routing number
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /documents/pdf:
+    post:
+      operationId: renderSamplePdf
+      tags: [documents]
+      summary: Render a safe sample document PDF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SampleDocumentInput"
+      responses:
+        "202":
+          description: PDF export boundary accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PdfExportResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +115,113 @@ components:
           type: string
       required:
         - status
+    IntegrationStatus:
+      type: object
+      properties:
+        places:
+          $ref: "#/components/schemas/ProviderStatus"
+        routing:
+          $ref: "#/components/schemas/ProviderStatus"
+        pdf:
+          $ref: "#/components/schemas/ProviderStatus"
+      required: [places, routing, pdf]
+    ProviderStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        provider:
+          type: string
+        message:
+          type: string
+      required: [configured, provider, message]
+    PlaceAutocompleteInput:
+      type: object
+      properties:
+        input:
+          type: string
+          minLength: 3
+          maxLength: 200
+      required: [input]
+    PlaceSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+      required: [id, description]
+    PlaceAutocompleteResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaceSuggestion"
+      required: [suggestions]
+    RoutingLookupInput:
+      type: object
+      properties:
+        routingNumber:
+          type: string
+          pattern: "^[0-9]{9}$"
+      required: [routingNumber]
+    RoutingLookupResponse:
+      type: object
+      properties:
+        routingNumber:
+          type: string
+        valid:
+          type: boolean
+        bankName:
+          type: ["string", "null"]
+        bankAddress:
+          type: ["string", "null"]
+        providerConfigured:
+          type: boolean
+        message:
+          type: string
+      required: [routingNumber, valid, bankName, bankAddress, providerConfigured, message]
+    SampleDocumentInput:
+      type: object
+      properties:
+        payeeName:
+          type: string
+          maxLength: 100
+        bankAddress:
+          type: string
+          maxLength: 200
+        accountNumber:
+          type: string
+          maxLength: 30
+        routingNumber:
+          type: string
+          pattern: "^[0-9]{9}$"
+        checkNumber:
+          type: string
+          maxLength: 20
+        date:
+          type: string
+          format: date
+        amount:
+          type: ["number", "null"]
+        memo:
+          type: string
+          maxLength: 200
+      required: [payeeName, bankAddress, accountNumber, routingNumber, checkNumber, date, amount, memo]
+    PdfExportResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [not_configured, ready]
+        message:
+          type: string
+      required: [status, message]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
 
