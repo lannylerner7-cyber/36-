@@ -54,6 +54,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - The current routing adapter validates ABA checksums but does not claim bank ownership or return bank metadata.
 - Browser print is the current available output path; it strips the browser-only sample watermark while preserving the document geometry. Server PDF export remains disabled until its renderer is configured.
 - MICR output uses the supplied A / C / D delimiter mapping; bank-equipment scan validation is still required before production use.
+- The UI includes a themed local-first policy footer; Canva remains optional and is not required for the renderer to operate.
 - After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen` before using generated hooks or Zod schemas.
 
 ## Pointers

@@ -124,7 +124,7 @@ function Home() {
               {health.isLoading ? 'Checking boundary' : health.isError ? 'Boundary unavailable' : 'Boundary online'}
             </div>
             <div className="h-5 w-px bg-sidebar-border" />
-            <span className="font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/50">v0.4 / safe mode</span>
+            <span className="font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/50">v0.4 / deposit-slip mode</span>
           </div>
         </div>
       </header>
@@ -135,8 +135,8 @@ function Home() {
             <div className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.2em] text-accent">
               <span className="h-px w-5 bg-accent" /> Input sheet / 01
             </div>
-            <h2 className="text-3xl font-extrabold tracking-[-.045em] text-foreground sm:text-[36px]">Prepare a safe sample.</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">Shape the fields on the left. The paper artifact on the right updates in place and stays permanently marked for non-production use.</p>
+            <h2 className="text-3xl font-extrabold tracking-[-.045em] text-foreground sm:text-[36px]">Build a deposit slip.</h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">Enter the details on the left. Your paper preview updates as you type and remains clearly marked for review.</p>
           </div>
 
           <div className="mb-7 grid grid-cols-2 gap-2">
@@ -233,6 +233,18 @@ function Home() {
           </div>
         </section>
       </div>
+      <footer className="print-hide border-t border-border bg-card/45 px-5 py-6 sm:px-8 lg:px-10" data-testid="footer-policy">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-4 text-[10px] leading-5 text-muted-foreground sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+          <div className="shrink-0">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.2em] text-foreground">Deposit Slip Studio</p>
+            <p className="mt-1">Local-first document preparation.</p>
+          </div>
+          <div className="max-w-3xl">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-accent">Use policy</p>
+            <p className="mt-1">Use only for authorized deposit-slip workflows. Account and MICR values are shown exactly as entered. External requests happen only through configured provider actions; browser print removes the preview watermark and uses the bundled MICR font.</p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

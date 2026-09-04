@@ -21,6 +21,7 @@ Document Renderer is a print-accurate deposit-slip workspace. Deposit slips are 
 - [x] Build-time inline Base64 font embedding
 - [x] MICR line mapping for routing, account, check, and delimiter symbols
 - [x] Reference-matched deposit-slip layout with logo, metadata, payee, check details, note, total, and perforated edge
+- [x] Themed, simplified input flow with a local-first use-policy footer
 
 ### In progress
 
