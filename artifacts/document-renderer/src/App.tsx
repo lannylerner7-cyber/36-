@@ -353,9 +353,8 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
 
       <div className="absolute left-[7.5%] top-[38%] h-[51%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
         <div className="absolute inset-x-0 top-0 h-[30%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
-          <div className="text-[.78em] font-semibold">DEPOSIT TO (PAYEE):</div>
-          <div className="mt-[1.4%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
-          {payeeAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`} className="uppercase">{line}</div>)}
+          <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
+          <div className="mt-[1.4%] break-words">{form.memo || '—'}</div>
         </div>
         <div className="absolute inset-x-0 top-[30%] grid h-[21%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
           <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
@@ -364,8 +363,9 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
         </div>
         <div className="absolute inset-x-0 top-[51%] grid h-[49%] grid-cols-[.9fr_1.1fr] border-t border-[#282a25]">
           <div className="border-r border-[#282a25] px-[3.5%] py-[3%]">
-            <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
-            <div className="mt-[3%] break-words">{form.memo || '—'}</div>
+            <div className="text-[.78em] font-semibold">PAYEE:</div>
+            <div className="mt-[3%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
+            {payeeAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`} className="uppercase">{line}</div>)}
           </div>
           <div className="px-[3.5%] py-[3%] text-[.86em] leading-[1.12]">
             <div className="font-semibold">PAYOR:</div>
