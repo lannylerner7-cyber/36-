@@ -13,6 +13,7 @@ import {
   useHealthCheck,
   useLookupRoutingNumber,
   useRenderSamplePdf,
+  type RoutingLookupResponse,
   type SampleDocumentInput,
 } from '@workspace/api-client-react';
 import {
@@ -178,6 +179,10 @@ function Home() {
                 </button>
               </div>
               {routingMessage && <div className={`flex items-start gap-2 rounded-md px-3 py-2 text-xs ${routing.data?.valid ? 'bg-secondary text-secondary-foreground' : 'bg-amber-50 text-amber-900'}`} data-testid="status-routing-message"><Info size={14} className="mt-0.5 shrink-0" /> {routingMessage}</div>}
+              {routing.data?.lookupStatus === 'found' && <div className="rounded-md border border-border bg-card/70 px-3 py-2.5 text-xs" data-testid="routing-directory-result">
+                <div className="flex items-start justify-between gap-3"><div><p className="font-bold text-foreground">{routing.data.bankName}</p>{routing.data.bankAddress && <p className="mt-1 leading-4 text-muted-foreground">{routing.data.bankAddress}</p>}</div>{routing.data.bankLogoUrl && <img src={routing.data.bankLogoUrl} alt="" className="h-8 w-8 rounded object-contain" />}</div>
+                <p className="mt-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">{routing.data.source ?? 'Local directory'} · {routing.data.rails.join(' + ') || 'routing'}</p>
+              </div>}
             </FieldGroup>
 
             <FieldGroup label="Document details" number="B">
@@ -219,7 +224,7 @@ function Home() {
                 <span className="mt-1 block">No production negotiability</span>
               </div>
             </div>
-             <DocumentPreview form={form} isPreviewMode={isPreviewMode} />
+             <DocumentPreview form={form} isPreviewMode={isPreviewMode} routingLookup={routing.data} />
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <IntegrationPanel data={integrations.data?.places} label="Places / address suggestions" icon={<MapPin size={16} />} loading={integrations.isLoading} />
               <IntegrationPanel data={integrations.data?.routing} label="Routing / bank validation" icon={<Landmark size={16} />} loading={integrations.isLoading} />
@@ -261,7 +266,7 @@ function TextField({ id, label, value, onChange, placeholder, type = 'text', hel
   return <label className="block" htmlFor={id}><span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">{label}{required && <span className="ml-1 text-accent" aria-hidden="true">*</span>}</span><input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} onFocus={onFocus} onKeyDown={onKeyDown} placeholder={placeholder} inputMode={inputMode} required={required} min={min} step={step} className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground/55 hover:border-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15" data-testid={`input-${id}`} />{helper && <span className="mt-1 block font-mono text-[9px] leading-4 text-muted-foreground">{helper}</span>}</label>;
 }
 
-function DocumentPreview({ form, isPreviewMode }: { form: SampleDocumentInput; isPreviewMode: boolean }) {
+function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleDocumentInput; isPreviewMode: boolean; routingLookup?: RoutingLookupResponse }) {
   const routingNumber = form.routingNumber || '000000000';
   const accountNumber = form.accountNumber || '000000000000';
   const checkNumber = form.checkNumber || '00000';
@@ -269,21 +274,23 @@ function DocumentPreview({ form, isPreviewMode }: { form: SampleDocumentInput; i
   const amountLabel = form.amount === null || Number.isNaN(form.amount)
     ? '—'
     : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const addressLines = (form.bankAddress || 'PO BOX 12345, NEW YORK, NY 10116-1234')
+  const addressLines = (form.bankAddress || routingLookup?.bankAddress || 'PO BOX 12345, NEW YORK, NY 10116-1234')
     .split(',')
     .map((line) => line.trim())
     .filter(Boolean);
+  const bankName = routingLookup?.bankName || 'SRC CLEARING & CO.';
+  const bankLogoUrl = routingLookup?.bankLogoUrl;
 
   return <div className="relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '6 / 2.75' }} data-testid="preview-document">
     <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
     <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
 
-    <div className="absolute left-[7.5%] top-[7.5%] flex h-[26%] w-[13%] items-center justify-center border border-[#282a25] bg-[#f8f8f0] text-center">
-      <span className="text-[clamp(9px,2vw,19px)] font-black leading-[.95] tracking-[-.06em]">SRC<br />LOGO</span>
+    <div className="absolute left-[7.5%] top-[7.5%] flex h-[26%] w-[13%] items-center justify-center border border-[#282a25] bg-[#f8f8f0] p-[2%] text-center">
+      {bankLogoUrl ? <img src={bankLogoUrl} alt={`${bankName} logo`} className="max-h-full max-w-full object-contain" /> : <span className="text-[clamp(9px,2vw,19px)] font-black leading-[.95] tracking-[-.06em]">SRC<br />LOGO</span>}
     </div>
     <div className="absolute left-[23%] top-[8.3%] w-[37%] text-[clamp(7px,1.55vw,14px)] leading-[1.12]">
-      <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">SRC CLEARING &amp; CO.</div>
+      <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
       <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
       {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
       {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}

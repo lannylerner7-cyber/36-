@@ -10,6 +10,10 @@ import type {
   RoutingLookupInput,
   RoutingLookupResponse,
 } from "@workspace/api-zod";
+import {
+  getRoutingDirectoryStatus,
+  lookupRoutingDirectory,
+} from "./routing-directory";
 
 type GoogleAutocompleteResponse = {
   suggestions?: Array<{
@@ -33,6 +37,14 @@ export function isValidRoutingNumber(routingNumber: string): boolean {
   return checksum % 10 === 0;
 }
 
+function getWebsiteHostname(website: string): string | null {
+  try {
+    return new URL(website.startsWith("http") ? website : `https://${website}`).hostname;
+  } catch {
+    return null;
+  }
+}
+
 export function getIntegrationStatus(): IntegrationStatus {
   return {
     places: {
@@ -43,11 +55,11 @@ export function getIntegrationStatus(): IntegrationStatus {
         : "Add GOOGLE_MAPS_API_KEY to enable address suggestions.",
     },
     routing: {
-      configured: Boolean(process.env.ROUTING_LOOKUP_BASE_URL),
-      provider: "Routing directory adapter",
-      message: process.env.ROUTING_LOOKUP_BASE_URL
-        ? "Routing directory adapter is configured."
-        : "Local ABA validation is available; bank metadata provider is not configured.",
+      configured: getRoutingDirectoryStatus().configured,
+      provider: "Local FedACH/FedWire directory",
+      message: getRoutingDirectoryStatus().configured
+        ? `Local routing directory loaded with ${getRoutingDirectoryStatus().recordCount.toLocaleString()} records.`
+        : "Local ABA validation is available; install a current license-authorized routing directory file for bank metadata.",
     },
     pdf: {
       configured: false,
@@ -105,17 +117,38 @@ export function lookupRoutingNumber(
   input: RoutingLookupInput,
 ): RoutingLookupResponse {
   const valid = isValidRoutingNumber(input.routingNumber);
+  const directory = getRoutingDirectoryStatus();
+  const record = valid ? lookupRoutingDirectory(input.routingNumber) : null;
+  const websiteHostname = record?.website ? getWebsiteHostname(record.website) : null;
+  const logoUrl = record?.logoUrl
+    ?? (websiteHostname && process.env.ROUTING_LOGO_GOOGLE_FAVICON === "true"
+      ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(websiteHostname)}&sz=128`
+      : null);
+  const logoSource = record?.logoUrl
+    ? "directory"
+    : logoUrl
+      ? "google-favicon-ui-fallback"
+      : null;
 
   return LookupRoutingNumberResponse.parse({
     routingNumber: input.routingNumber,
     valid,
-    bankName: null,
-    bankAddress: null,
-    providerConfigured: Boolean(process.env.ROUTING_LOOKUP_BASE_URL),
-    message: valid
-      ? process.env.ROUTING_LOOKUP_BASE_URL
-        ? "Routing number passed local validation; provider lookup is next."
-        : "Routing number passed local ABA validation. Bank metadata provider is not configured."
-      : "Routing number failed ABA checksum validation.",
+    lookupStatus: !valid ? "invalid_checksum" : record ? "found" : "not_found",
+    bankName: record?.bankName ?? null,
+    bankAddress: record?.bankAddress ?? null,
+    bankWebsite: record?.website ?? null,
+    bankLogoUrl: logoUrl,
+    bankLogoSource: logoSource,
+    rails: record?.rails ?? [],
+    source: record?.source ?? null,
+    lastUpdated: record?.lastUpdated ?? directory.lastUpdated,
+    providerConfigured: directory.configured,
+    message: !valid
+      ? "Routing number failed ABA checksum validation."
+      : record
+        ? `Routing number matched ${record.bankName} in the local directory.`
+        : directory.configured
+          ? "Routing number passed ABA validation but was not found in the loaded directory."
+          : "Routing number passed local ABA validation. Bank metadata directory is not configured.",
   });
 }

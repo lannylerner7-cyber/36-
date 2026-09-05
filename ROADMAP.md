@@ -22,19 +22,22 @@ Document Renderer is a print-accurate deposit-slip workspace. Deposit slips are 
 - [x] MICR line mapping for routing, account, check, and delimiter symbols
 - [x] Reference-matched deposit-slip layout with logo, metadata, payee, check details, note, total, and perforated edge
 - [x] Themed, simplified input flow with a local-first use-policy footer
+- [x] Local routing-directory loader for authorized FedACH/FedWire JSON and fixed-width files
+- [x] Institution metadata response with source, rails, freshness, and UI-only logo fields
 
 ### In progress
 
 - [x] Google Places address autocomplete adapter through the server
 - [x] Local routing-number ABA checksum validation
 - [x] Routing-directory provider adapter boundary
+- [ ] Install and refresh a current license-authorized FedACH/FedWire directory snapshot
 - [ ] Deterministic PDF export through the server
 - [ ] Cross-browser print regression checks
 
 ### Blocked until configuration is available
 
 - [ ] Live Google Maps Places requests require `GOOGLE_MAPS_API_KEY`
-- [ ] A production routing-directory provider and credentials still need to be selected
+- [ ] A current license-authorized routing-directory snapshot still needs to be installed
 - [ ] Production PDF generation requires a server PDF runtime and font licensing review
 
 ## Scope checklist

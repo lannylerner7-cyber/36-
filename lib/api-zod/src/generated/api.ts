@@ -72,8 +72,15 @@ export const LookupRoutingNumberBody = zod.object({
 export const LookupRoutingNumberResponse = zod.object({
   "routingNumber": zod.string(),
   "valid": zod.boolean(),
+  "lookupStatus": zod.enum(['invalid_checksum', 'not_found', 'found']),
   "bankName": zod.string().nullable(),
   "bankAddress": zod.string().nullable(),
+  "bankWebsite": zod.string().nullable(),
+  "bankLogoUrl": zod.string().nullable(),
+  "bankLogoSource": zod.string().nullable(),
+  "rails": zod.array(zod.string()),
+  "source": zod.string().nullable(),
+  "lastUpdated": zod.string().nullable(),
   "providerConfigured": zod.boolean(),
   "message": zod.string()
 })

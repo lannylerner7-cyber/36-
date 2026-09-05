@@ -173,15 +173,32 @@ components:
           type: string
         valid:
           type: boolean
+        lookupStatus:
+          type: string
+          enum: [invalid_checksum, not_found, found]
         bankName:
           type: ["string", "null"]
         bankAddress:
+          type: ["string", "null"]
+        bankWebsite:
+          type: ["string", "null"]
+        bankLogoUrl:
+          type: ["string", "null"]
+        bankLogoSource:
+          type: ["string", "null"]
+        rails:
+          type: array
+          items:
+            type: string
+        source:
+          type: ["string", "null"]
+        lastUpdated:
           type: ["string", "null"]
         providerConfigured:
           type: boolean
         message:
           type: string
-      required: [routingNumber, valid, bankName, bankAddress, providerConfigured, message]
+      required: [routingNumber, valid, lookupStatus, bankName, bankAddress, bankWebsite, bankLogoUrl, bankLogoSource, rails, source, lastUpdated, providerConfigured, message]
     SampleDocumentInput:
       type: object
       properties:

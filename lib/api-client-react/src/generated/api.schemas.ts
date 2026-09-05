@@ -46,10 +46,22 @@ export interface RoutingLookupInput {
 export interface RoutingLookupResponse {
   routingNumber: string;
   valid: boolean;
+  lookupStatus: 'invalid_checksum' | 'not_found' | 'found';
   /** @nullable */
   bankName: string | null;
   /** @nullable */
   bankAddress: string | null;
+  /** @nullable */
+  bankWebsite: string | null;
+  /** @nullable */
+  bankLogoUrl: string | null;
+  /** @nullable */
+  bankLogoSource: string | null;
+  rails: string[];
+  /** @nullable */
+  source: string | null;
+  /** @nullable */
+  lastUpdated: string | null;
   providerConfigured: boolean;
   message: string;
 }
