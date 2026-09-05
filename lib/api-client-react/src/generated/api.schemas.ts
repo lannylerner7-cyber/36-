@@ -43,10 +43,19 @@ export interface RoutingLookupInput {
   routingNumber: string;
 }
 
+export type RoutingLookupResponseLookupStatus = typeof RoutingLookupResponseLookupStatus[keyof typeof RoutingLookupResponseLookupStatus];
+
+
+export const RoutingLookupResponseLookupStatus = {
+  invalid_checksum: 'invalid_checksum',
+  not_found: 'not_found',
+  found: 'found',
+} as const;
+
 export interface RoutingLookupResponse {
   routingNumber: string;
   valid: boolean;
-  lookupStatus: 'invalid_checksum' | 'not_found' | 'found';
+  lookupStatus: RoutingLookupResponseLookupStatus;
   /** @nullable */
   bankName: string | null;
   /** @nullable */
@@ -69,8 +78,19 @@ export interface RoutingLookupResponse {
 export interface SampleDocumentInput {
   /** @maxLength 100 */
   payeeName: string;
+  /** @maxLength 100 */
+  payorName?: string;
+  /** @maxLength 200 */
+  payorAddress?: string;
+  /** @maxLength 100 */
+  bankName?: string;
   /** @maxLength 200 */
   bankAddress: string;
+  /**
+     * @maxLength 2097152
+     * @nullable
+     */
+  bankLogoDataUrl?: string | null;
   /** @maxLength 30 */
   accountNumber: string;
   /** @pattern ^[0-9]{9}$ */

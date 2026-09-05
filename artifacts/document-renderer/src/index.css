@@ -184,6 +184,7 @@
     width: 6in !important;
     height: 2.75in !important;
     max-width: none !important;
+    margin: 0 auto !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     break-inside: avoid;

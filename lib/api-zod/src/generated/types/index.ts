@@ -17,4 +17,5 @@ export * from './placeSuggestion';
 export * from './providerStatus';
 export * from './routingLookupInput';
 export * from './routingLookupResponse';
+export * from './routingLookupResponseLookupStatus';
 export * from './sampleDocumentInput';

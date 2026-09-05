@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 112" role="img" aria-labelledby="title desc">
+  <title id="title">DepSlips wordmark</title>
+  <desc id="desc">DepSlips deposit slip studio wordmark.</desc>
+  <g transform="translate(4 8) scale(.96)">
+    <rect width="96" height="96" rx="20" fill="#202536"/>
+    <path d="M23 19h43a7 7 0 0 1 7 7v44a7 7 0 0 1-7 7H23a7 7 0 0 1-7-7V26a7 7 0 0 1 7-7Z" fill="#F4F1E8"/>
+    <path d="M73 24.5c-4 3-4 6 0 9s4 6 0 9-4 6 0 9 4 6 0 9-4 6 0 9" fill="none" stroke="#F16D46" stroke-width="3"/>
+    <path d="M27 34h27M27 42h34M27 51h19M27 60h28" fill="none" stroke="#202536" stroke-width="4" stroke-linecap="round"/>
+    <path d="M27 70h30" fill="none" stroke="#1D5B4F" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="122" y="58" fill="#202536" font-family="Arial, sans-serif" font-size="48" font-weight="800" letter-spacing="-2">DepSlips</text>
+  <text x="126" y="84" fill="#F16D46" font-family="monospace" font-size="12" font-weight="700" letter-spacing="3">DEPOSIT SLIP STUDIO</text>
+</svg>

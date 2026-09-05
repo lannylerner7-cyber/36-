@@ -205,9 +205,21 @@ components:
         payeeName:
           type: string
           maxLength: 100
+        payorName:
+          type: string
+          maxLength: 100
+        payorAddress:
+          type: string
+          maxLength: 200
+        bankName:
+          type: string
+          maxLength: 100
         bankAddress:
           type: string
           maxLength: 200
+        bankLogoDataUrl:
+          type: ["string", "null"]
+          maxLength: 2097152
         accountNumber:
           type: string
           maxLength: 30

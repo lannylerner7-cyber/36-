@@ -91,7 +91,15 @@ export const LookupRoutingNumberResponse = zod.object({
  */
 export const renderSamplePdfBodyPayeeNameMax = 100;
 
+export const renderSamplePdfBodyPayorNameMax = 100;
+
+export const renderSamplePdfBodyPayorAddressMax = 200;
+
+export const renderSamplePdfBodyBankNameMax = 100;
+
 export const renderSamplePdfBodyBankAddressMax = 200;
+
+export const renderSamplePdfBodyBankLogoDataUrlMax = 2097152;
 
 export const renderSamplePdfBodyAccountNumberMax = 30;
 
@@ -104,7 +112,11 @@ export const renderSamplePdfBodyMemoMax = 200;
 
 export const RenderSamplePdfBody = zod.object({
   "payeeName": zod.string().max(renderSamplePdfBodyPayeeNameMax),
+  "payorName": zod.string().max(renderSamplePdfBodyPayorNameMax).optional(),
+  "payorAddress": zod.string().max(renderSamplePdfBodyPayorAddressMax).optional(),
+  "bankName": zod.string().max(renderSamplePdfBodyBankNameMax).optional(),
   "bankAddress": zod.string().max(renderSamplePdfBodyBankAddressMax),
+  "bankLogoDataUrl": zod.string().max(renderSamplePdfBodyBankLogoDataUrlMax).nullish(),
   "accountNumber": zod.string().max(renderSamplePdfBodyAccountNumberMax),
   "routingNumber": zod.string().regex(renderSamplePdfBodyRoutingNumberRegExp),
   "checkNumber": zod.string().max(renderSamplePdfBodyCheckNumberMax),

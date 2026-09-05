@@ -9,8 +9,19 @@
 export interface SampleDocumentInput {
   /** @maxLength 100 */
   payeeName: string;
+  /** @maxLength 100 */
+  payorName?: string;
+  /** @maxLength 200 */
+  payorAddress?: string;
+  /** @maxLength 100 */
+  bankName?: string;
   /** @maxLength 200 */
   bankAddress: string;
+  /**
+     * @maxLength 2097152
+     * @nullable
+     */
+  bankLogoDataUrl?: string | null;
   /** @maxLength 30 */
   accountNumber: string;
   /** @pattern ^[0-9]{9}$ */

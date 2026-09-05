@@ -5,11 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { RoutingLookupResponseLookupStatus } from './routingLookupResponseLookupStatus';
 
 export interface RoutingLookupResponse {
   routingNumber: string;
   valid: boolean;
-  lookupStatus: 'invalid_checksum' | 'not_found' | 'found';
+  lookupStatus: RoutingLookupResponseLookupStatus;
   /** @nullable */
   bankName: string | null;
   /** @nullable */

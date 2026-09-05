@@ -33,6 +33,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import {
   Route,
@@ -47,7 +48,11 @@ function Home() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SampleDocumentInput>({
     payeeName: 'Northwind Operations',
+    payorName: '',
+    payorAddress: '',
+    bankName: '',
     bankAddress: '',
+    bankLogoDataUrl: null,
     accountNumber: '000000000000',
     routingNumber: '',
     checkNumber: '10427',
@@ -99,6 +104,16 @@ function Home() {
       onSuccess: (result) => setPdfMessage(result.message),
       onError: () => setPdfMessage('The PDF boundary returned an error. Nothing was exported.'),
     });
+  };
+
+  const handleLogoUpload = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      if (typeof reader.result === 'string') setField('bankLogoDataUrl', reader.result);
+    });
+    reader.readAsDataURL(file);
   };
 
   const retryStatus = () => {
@@ -153,6 +168,18 @@ function Home() {
           <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
             <FieldGroup label="Recipient & bank" number="A">
               <TextField id="payeeName" label="Payee name" value={form.payeeName} onChange={(value) => setField('payeeName', value)} placeholder="Northwind Operations" required />
+              <TextField id="bankName" label="Payee bank name" value={form.bankName ?? ''} onChange={(value) => setField('bankName', value)} placeholder="Your bank name" required />
+              <div>
+                <span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">Payee bank logo</span>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="bankLogo" className="flex h-10 flex-1 cursor-pointer items-center gap-2 rounded-md border border-input bg-card px-3 text-sm text-muted-foreground shadow-sm transition hover:border-muted-foreground/50">
+                    <Upload size={15} className="text-accent" />
+                    <span className="truncate">{form.bankLogoDataUrl ? 'Logo uploaded' : 'Upload an image'}</span>
+                    <input id="bankLogo" type="file" accept="image/*" className="sr-only" onChange={(event) => handleLogoUpload(event.target.files?.[0])} data-testid="input-bank-logo" />
+                  </label>
+                  {form.bankLogoDataUrl && <button type="button" className="text-[11px] font-semibold text-muted-foreground underline-offset-2 hover:text-foreground hover:underline" onClick={() => setField('bankLogoDataUrl', null)}>Remove</button>}
+                </div>
+              </div>
               <div className="relative">
                 <TextField id="bankAddress" label="Bank address" value={placeInput || form.bankAddress} onChange={(value) => { setPlaceInput(value); setField('bankAddress', value); }} placeholder="Begin typing a physical address" onFocus={() => setShowSuggestions(true)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); searchPlaces(); } }} required />
                 <button type="button" onClick={searchPlaces} disabled={placeInput.trim().length < 3 || autocomplete.isPending} className="absolute right-2 top-[27px] flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30" data-testid="button-search-address" aria-label="Search address suggestions">
@@ -185,14 +212,19 @@ function Home() {
               </div>}
             </FieldGroup>
 
-            <FieldGroup label="Document details" number="B">
+            <FieldGroup label="Payor details" number="B">
+              <TextField id="payorName" label="Payor name" value={form.payorName ?? ''} onChange={(value) => setField('payorName', value)} placeholder="Person or business name" />
+              <TextField id="payorAddress" label="Payor address" value={form.payorAddress ?? ''} onChange={(value) => setField('payorAddress', value)} placeholder="Street, city, state, ZIP" />
+            </FieldGroup>
+
+             <FieldGroup label="Document details" number="C">
               <div className="grid grid-cols-2 gap-3">
                  <TextField id="checkNumber" label="Check number" value={form.checkNumber} onChange={(value) => setField('checkNumber', value)} placeholder="10427" required />
                  <TextField id="date" label="Date" value={form.date} onChange={(value) => setField('date', value)} type="date" required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                  <TextField id="accountNumber" label="Account number" value={form.accountNumber} onChange={(value) => setField('accountNumber', value.replace(/\D/g, '').slice(0, 30))} placeholder="Digits only" inputMode="numeric" helper="Stored in memory only; preview matches the entered value." required />
-                 <TextField id="amount" label="Amount" value={form.amount === null ? '' : String(form.amount)} onChange={(value) => setField('amount', value === '' ? null : Number(value))} placeholder="0.00" inputMode="decimal" min="0" step="0.01" required />
+                  <TextField id="amount" label="Amount" value={form.amount === null ? '' : String(form.amount)} onChange={(value) => { if (value === '') { setField('amount', null); return; } const normalized = value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'); const [whole, cents] = normalized.split('.'); setField('amount', Number(`${whole || '0'}${cents === undefined ? '' : `.${cents.slice(0, 2)}`}`)); }} placeholder="0.00" inputMode="decimal" min="0" step="0.01" required />
               </div>
                <TextField id="memo" label="Memo" value={form.memo} onChange={(value) => setField('memo', value)} placeholder="VOID — SAMPLE ONLY" required />
             </FieldGroup>
@@ -270,7 +302,7 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
   const routingNumber = form.routingNumber || '000000000';
   const accountNumber = form.accountNumber || '000000000000';
   const checkNumber = form.checkNumber || '00000';
-  const micrValue = `A${routingNumber}A ${accountNumber}C ${checkNumber}D`;
+  const micrValue = `A${routingNumber}A ${accountNumber}C D`;
   const amountLabel = form.amount === null || Number.isNaN(form.amount)
     ? '—'
     : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -278,8 +310,9 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     .split(',')
     .map((line) => line.trim())
     .filter(Boolean);
-  const bankName = routingLookup?.bankName || 'SRC CLEARING & CO.';
-  const bankLogoUrl = routingLookup?.bankLogoUrl;
+  const bankName = form.bankName || routingLookup?.bankName || 'PAYEE BANK NAME';
+  const bankLogoUrl = form.bankLogoDataUrl || routingLookup?.bankLogoUrl;
+  const payorAddressLines = (form.payorAddress || 'PAYOR ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
 
   return <div className="relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '6 / 2.75' }} data-testid="preview-document">
     <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
@@ -302,23 +335,28 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
       <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{accountNumber}</span></div>
     </div>
 
-    <div className="absolute left-[7.5%] top-[42%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
-      <div className="border-b border-[#282a25] px-[2.2%] py-[1.7%]">
+     <div className="absolute left-[7.5%] top-[39%] h-[45%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
+       <div className="absolute inset-x-0 top-0 h-[30%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
         <div className="text-[.78em] font-semibold">DEPOSIT TO (PAYEE):</div>
         <div className="mt-[1.7%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
       </div>
-      <div className="grid grid-cols-[31%_31%_38%] border-b border-[#282a25]">
+       <div className="absolute inset-x-0 top-[30%] grid h-[24%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
         <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
         <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || '—'}</div></div>
         <div className="px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK AMOUNT:</div><div className="mt-[3%]"><span className="mr-[8%]">$</span>{amountLabel}</div></div>
       </div>
-      <div className="min-h-[22%] px-[2.2%] py-[2.5%]">
+       <div className="absolute inset-x-0 top-[54%] h-[22%] border-b border-[#282a25] px-[2.2%] py-[1.5%]">
         <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
         <div className="mt-[2%]">{form.memo || '—'}</div>
       </div>
-    </div>
+       <div className="absolute inset-x-0 bottom-0 h-[24%] px-[2.2%] pt-[2%] text-[.75em] leading-[1]">
+         <div className="font-semibold">PAYOR:</div>
+         <div className="mt-[1%] uppercase">{form.payorName || 'PAYOR NAME'}</div>
+         {payorAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
+       </div>
+     </div>
 
-    <div className="absolute right-[6.3%] top-[58%] w-[20%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.35vw,12px)] leading-none">
+     <div className="absolute right-[6.3%] top-[56%] w-[20%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.35vw,12px)] leading-none">
       <div className="border-b border-[#282a25] px-[6%] py-[7%] font-semibold">TOTAL DEPOSIT</div>
       <div className="px-[6%] py-[10%]"><span className="mr-[14%]">$</span>{amountLabel}</div>
     </div>
