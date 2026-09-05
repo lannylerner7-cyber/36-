@@ -42,7 +42,7 @@ Document Renderer prepares print-accurate deposit-slip previews with protected a
 - The frontend and PDF boundary consume one typed OpenAPI contract; generated hooks are the only client API surface.
 - External provider credentials stay server-side. Missing credentials are represented as readiness state, not silent fallbacks.
 - Routing numbers receive local ABA checksum validation before an optional local directory lookup; checksum validity never claims bank ownership.
-- The renderer's internal paper geometry is fixed at 6 in × 2.75 in; responsive scaling changes presentation, not document dimensions.
+- The renderer's internal paper geometry is fixed at 6 in × 3.25 in; responsive scaling changes presentation, not document dimensions.
 
 ## Product
 

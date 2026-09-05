@@ -61,6 +61,7 @@ function Home() {
     memo: 'VOID — SAMPLE ONLY',
   });
   const [placeInput, setPlaceInput] = useState('');
+  const [amountInput, setAmountInput] = useState('0.00');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [routingMessage, setRoutingMessage] = useState('');
   const [pdfMessage, setPdfMessage] = useState('');
@@ -114,6 +115,18 @@ function Home() {
       if (typeof reader.result === 'string') setField('bankLogoDataUrl', reader.result);
     });
     reader.readAsDataURL(file);
+  };
+
+  const handleAmountChange = (value: string) => {
+    const normalized = value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
+    const decimalIndex = normalized.indexOf('.');
+    const currencyValue = decimalIndex === -1 ? normalized : normalized.slice(0, decimalIndex + 3);
+    setAmountInput(currencyValue);
+    if (currencyValue === '' || currencyValue === '.') {
+      setField('amount', null);
+      return;
+    }
+    setField('amount', Number(currencyValue));
   };
 
   const retryStatus = () => {
@@ -224,7 +237,7 @@ function Home() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                  <TextField id="accountNumber" label="Account number" value={form.accountNumber} onChange={(value) => setField('accountNumber', value.replace(/\D/g, '').slice(0, 30))} placeholder="Digits only" inputMode="numeric" helper="Stored in memory only; preview matches the entered value." required />
-                  <TextField id="amount" label="Amount" value={form.amount === null ? '' : String(form.amount)} onChange={(value) => { if (value === '') { setField('amount', null); return; } const normalized = value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'); const [whole, cents] = normalized.split('.'); setField('amount', Number(`${whole || '0'}${cents === undefined ? '' : `.${cents.slice(0, 2)}`}`)); }} placeholder="0.00" inputMode="decimal" min="0" step="0.01" required />
+                   <TextField id="amount" label="Amount" value={amountInput} onChange={handleAmountChange} placeholder="0.00" inputMode="decimal" required />
               </div>
                <TextField id="memo" label="Memo" value={form.memo} onChange={(value) => setField('memo', value)} placeholder="VOID — SAMPLE ONLY" required />
             </FieldGroup>
@@ -244,12 +257,12 @@ function Home() {
         </section>
 
          <section className="paper-grid print-surface min-w-0 bg-[hsl(40_22%_91%)] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-          <div className="mx-auto max-w-[760px]">
+          <div className="mx-auto max-w-[820px]">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.2em] text-accent"><span className="h-px w-5 bg-accent" /> Output sheet / 02</div>
                 <h2 className="text-2xl font-extrabold tracking-[-.04em]">Physical preview</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Live representation · US letter placement · 6 × 2.75 in artifact</p>
+                <p className="mt-1 text-xs text-muted-foreground">Live representation · US letter placement · 6 × 3.25 in artifact</p>
               </div>
               <div className="rounded-md border border-border bg-card/80 px-3 py-2 text-right font-mono text-[10px] uppercase tracking-[.13em] text-muted-foreground">
                 <span className="block text-foreground">100% safe mode</span>
@@ -314,7 +327,7 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
   const bankLogoUrl = form.bankLogoDataUrl || routingLookup?.bankLogoUrl;
   const payorAddressLines = (form.payorAddress || 'PAYOR ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
 
-  return <div className="relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '6 / 2.75' }} data-testid="preview-document">
+  return <div className="relative mx-auto w-full max-w-[820px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '6 / 3.25' }} data-testid="preview-document">
     <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
     <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
@@ -335,24 +348,26 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
       <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{accountNumber}</span></div>
     </div>
 
-     <div className="absolute left-[7.5%] top-[39%] h-[45%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
-       <div className="absolute inset-x-0 top-0 h-[30%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
+      <div className="absolute left-[7.5%] top-[39%] h-[47%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
+        <div className="absolute inset-x-0 top-0 h-[21%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
         <div className="text-[.78em] font-semibold">DEPOSIT TO (PAYEE):</div>
         <div className="mt-[1.7%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
       </div>
-       <div className="absolute inset-x-0 top-[30%] grid h-[24%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
+        <div className="absolute inset-x-0 top-[21%] grid h-[24%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
         <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
         <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || '—'}</div></div>
         <div className="px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK AMOUNT:</div><div className="mt-[3%]"><span className="mr-[8%]">$</span>{amountLabel}</div></div>
       </div>
-       <div className="absolute inset-x-0 top-[54%] h-[22%] border-b border-[#282a25] px-[2.2%] py-[1.5%]">
-        <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
-        <div className="mt-[2%]">{form.memo || '—'}</div>
-      </div>
-       <div className="absolute inset-x-0 bottom-0 h-[24%] px-[2.2%] pt-[2%] text-[.75em] leading-[1]">
-         <div className="font-semibold">PAYOR:</div>
-         <div className="mt-[1%] uppercase">{form.payorName || 'PAYOR NAME'}</div>
-         {payorAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
+        <div className="absolute inset-x-0 top-[45%] grid h-[55%] grid-cols-[1fr_1.2fr] border-t border-[#282a25]">
+          <div className="border-r border-[#282a25] px-[3.5%] py-[3%]">
+            <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
+            <div className="mt-[3%] break-words">{form.memo || '—'}</div>
+          </div>
+          <div className="px-[3.5%] py-[3%] text-[.86em] leading-[1.12]">
+            <div className="font-semibold">PAYOR:</div>
+            <div className="mt-[2%] uppercase">{form.payorName || 'PAYOR NAME'}</div>
+            {payorAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
+          </div>
        </div>
      </div>
 
