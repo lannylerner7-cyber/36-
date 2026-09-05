@@ -172,7 +172,7 @@
     display: block !important;
     min-height: 11in !important;
     width: 8.5in !important;
-    padding: 1.25in !important;
+    padding: 0.75in 0.25in !important;
     background: #ffffff !important;
   }
 
@@ -181,8 +181,8 @@
   }
 
   [data-testid='preview-document'] {
-    width: 6in !important;
-    height: 3.25in !important;
+    width: 8in !important;
+    height: 4.5in !important;
     max-width: none !important;
     margin: 0 auto !important;
     border-radius: 0 !important;

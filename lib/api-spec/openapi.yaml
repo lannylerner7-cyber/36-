@@ -205,6 +205,9 @@ components:
         payeeName:
           type: string
           maxLength: 100
+        payeeAddress:
+          type: string
+          maxLength: 200
         payorName:
           type: string
           maxLength: 100

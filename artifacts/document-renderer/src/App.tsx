@@ -48,6 +48,7 @@ function Home() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SampleDocumentInput>({
     payeeName: 'Northwind Operations',
+    payeeAddress: '',
     payorName: '',
     payorAddress: '',
     bankName: '',
@@ -181,6 +182,7 @@ function Home() {
           <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
             <FieldGroup label="Recipient & bank" number="A">
               <TextField id="payeeName" label="Payee name" value={form.payeeName} onChange={(value) => setField('payeeName', value)} placeholder="Northwind Operations" required />
+               <TextField id="payeeAddress" label="Payee address" value={form.payeeAddress ?? ''} onChange={(value) => setField('payeeAddress', value)} placeholder="Street, city, state, ZIP" />
               <TextField id="bankName" label="Payee bank name" value={form.bankName ?? ''} onChange={(value) => setField('bankName', value)} placeholder="Your bank name" required />
               <div>
                 <span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">Payee bank logo</span>
@@ -257,12 +259,12 @@ function Home() {
         </section>
 
          <section className="paper-grid print-surface min-w-0 bg-[hsl(40_22%_91%)] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-          <div className="mx-auto max-w-[820px]">
+          <div className="mx-auto max-w-[960px]">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.2em] text-accent"><span className="h-px w-5 bg-accent" /> Output sheet / 02</div>
                 <h2 className="text-2xl font-extrabold tracking-[-.04em]">Physical preview</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Live representation · US letter placement · 6 × 3.25 in artifact</p>
+                <p className="mt-1 text-xs text-muted-foreground">Live representation · US letter placement · 8 × 4.5 in artifact</p>
               </div>
               <div className="rounded-md border border-border bg-card/80 px-3 py-2 text-right font-mono text-[10px] uppercase tracking-[.13em] text-muted-foreground">
                 <span className="block text-foreground">100% safe mode</span>
@@ -325,9 +327,10 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     .filter(Boolean);
   const bankName = form.bankName || routingLookup?.bankName || 'PAYEE BANK NAME';
   const bankLogoUrl = form.bankLogoDataUrl || routingLookup?.bankLogoUrl;
+  const payeeAddressLines = (form.payeeAddress || 'PAYEE ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
   const payorAddressLines = (form.payorAddress || 'PAYOR ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
 
-  return <div className="relative mx-auto w-full max-w-[820px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '6 / 3.25' }} data-testid="preview-document">
+  return <div className="relative mx-auto w-full max-w-[960px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '8 / 4.5' }} data-testid="preview-document">
     <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
     <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
@@ -348,17 +351,18 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
       <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{accountNumber}</span></div>
     </div>
 
-      <div className="absolute left-[7.5%] top-[39%] h-[47%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
-        <div className="absolute inset-x-0 top-0 h-[21%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
-        <div className="text-[.78em] font-semibold">DEPOSIT TO (PAYEE):</div>
-        <div className="mt-[1.7%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
-      </div>
-        <div className="absolute inset-x-0 top-[21%] grid h-[24%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
-        <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
-        <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || '—'}</div></div>
-        <div className="px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK AMOUNT:</div><div className="mt-[3%]"><span className="mr-[8%]">$</span>{amountLabel}</div></div>
-      </div>
-        <div className="absolute inset-x-0 top-[45%] grid h-[55%] grid-cols-[1fr_1.2fr] border-t border-[#282a25]">
+      <div className="absolute left-[7.5%] top-[38%] h-[51%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
+        <div className="absolute inset-x-0 top-0 h-[30%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
+          <div className="text-[.78em] font-semibold">DEPOSIT TO (PAYEE):</div>
+          <div className="mt-[1.4%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
+          {payeeAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`} className="uppercase">{line}</div>)}
+        </div>
+        <div className="absolute inset-x-0 top-[30%] grid h-[21%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
+          <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
+          <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || '—'}</div></div>
+          <div className="px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK AMOUNT:</div><div className="mt-[3%]"><span className="mr-[8%]">$</span>{amountLabel}</div></div>
+        </div>
+        <div className="absolute inset-x-0 top-[51%] grid h-[49%] grid-cols-[.9fr_1.1fr] border-t border-[#282a25]">
           <div className="border-r border-[#282a25] px-[3.5%] py-[3%]">
             <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
             <div className="mt-[3%] break-words">{form.memo || '—'}</div>
@@ -368,10 +372,10 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
             <div className="mt-[2%] uppercase">{form.payorName || 'PAYOR NAME'}</div>
             {payorAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
           </div>
-       </div>
-     </div>
+        </div>
+      </div>
 
-     <div className="absolute right-[6.3%] top-[56%] w-[20%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.35vw,12px)] leading-none">
+      <div className="absolute right-[6.3%] top-[55%] w-[20%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.35vw,12px)] leading-none">
       <div className="border-b border-[#282a25] px-[6%] py-[7%] font-semibold">TOTAL DEPOSIT</div>
       <div className="px-[6%] py-[10%]"><span className="mr-[14%]">$</span>{amountLabel}</div>
     </div>

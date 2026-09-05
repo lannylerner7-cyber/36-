@@ -78,6 +78,8 @@ export interface RoutingLookupResponse {
 export interface SampleDocumentInput {
   /** @maxLength 100 */
   payeeName: string;
+  /** @maxLength 200 */
+  payeeAddress?: string;
   /** @maxLength 100 */
   payorName?: string;
   /** @maxLength 200 */
