@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type KeyboardEvent, type ReactNode, type SetStateAction } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import micrFontData from './assets/GnuMICR.ttf?inline';
+import depslipLogo from './assets/brand/depslip-logo.svg';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { DepSlipMark } from '@/components/depslip-mark';
 import { Toaster } from '@/components/ui/toaster';
@@ -173,11 +174,8 @@ function BrandBar({ admin = false, onLogout }: { admin?: boolean; onLogout?: () 
     <header className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-5 py-4 lg:px-8">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-sidebar-primary/15 text-sidebar-primary ring-1 ring-sidebar-primary/30"><DepSlipMark compact /></div>
-          <div>
-            <p className="font-mono text-[9px] uppercase tracking-[.24em] text-sidebar-foreground/55">{admin ? 'Operator console' : 'Document preparation'}</p>
-            <h1 className="mt-0.5 text-[20px] font-semibold tracking-[-.04em]" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>DepSlip</h1>
-          </div>
+          <img src={depslipLogo} alt="DepSlip" className="h-10 w-auto" data-testid="img-depslip-logo" />
+          <p className="hidden font-mono text-[9px] uppercase tracking-[.24em] text-sidebar-foreground/55 sm:block">{admin ? 'Operator console' : 'Document preparation'}</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/60 sm:inline">{admin ? 'Restricted surface' : 'Authorized workspace'}</span>
@@ -248,7 +246,7 @@ function CustomerHome() {
           </form>
         </div>
       </section>
-      <section className="mx-auto grid max-w-[1480px] gap-5 px-5 py-12 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:px-16 lg:py-16">
+       <section className="mx-auto grid max-w-[1480px] gap-5 px-5 py-12 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:px-16 lg:py-16">
         <div className="rounded-2xl border border-border bg-card p-7 sm:p-9">
           <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">02 / Order tracking</p>
           <h3 className="mt-3 text-3xl font-semibold tracking-[-.05em]">Already requested access?</h3>
@@ -261,15 +259,34 @@ function CustomerHome() {
           {lookupResult && <div className="mt-5 flex items-center justify-between rounded-lg bg-secondary px-4 py-3 text-sm" data-testid="status-order-lookup"><span className="font-semibold">{lookupResult.orderNumber} · {lookupResult.planId}</span><span className="font-mono text-[10px] uppercase tracking-wider">{lookupResult.status}</span></div>}
           {message && !session.data?.authenticated && <p className="mt-4 text-xs text-destructive" data-testid="status-order-error">{message}</p>}
         </div>
-        <div className="rounded-2xl border border-border bg-[hsl(175_18%_86%)] p-7 sm:p-9">
-          <p className="font-mono text-[10px] uppercase tracking-[.2em] text-secondary-foreground">A careful boundary</p>
-          <h3 className="mt-3 text-2xl font-semibold tracking-[-.04em]">No card details collected here.</h3>
-          <p className="mt-3 text-sm leading-6 text-secondary-foreground/75">Card orders are terminal/manual payment requests. Bitcoin instructions, when configured, are shared by the operator after your request.</p>
-          <div className="mt-7 flex items-center gap-3 border-t border-secondary-foreground/15 pt-5 text-xs font-semibold text-secondary-foreground"><ShieldCheck size={17} /> Authorized workflows only</div>
-        </div>
+         <SubscriptionPackages />
       </section>
       <footer className="border-t border-border px-5 py-8 text-center font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">DepSlip · document preparation with a paper conscience</footer>
     </main>
+  );
+}
+
+function SubscriptionPackages() {
+  const plans = useListPlans({ query: { queryKey: getListPlansQueryKey() } });
+  return (
+    <div className="rounded-2xl border border-border bg-[hsl(175_18%_86%)] p-7 sm:p-9" data-testid="section-subscription-packages">
+      <p className="font-mono text-[10px] uppercase tracking-[.2em] text-secondary-foreground">03 / Subscription packages</p>
+      <h3 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Choose the right run.</h3>
+      <p className="mt-3 text-sm leading-6 text-secondary-foreground/75">Every package gives you a prepared workspace with a defined slip allowance and design capacity.</p>
+      <div className="mt-6 space-y-2.5">
+        {plans.isLoading ? [1, 2, 3].map((item) => <div key={item} className="h-[74px] animate-pulse rounded-xl bg-secondary-foreground/10" />) : plans.data?.map((plan) => (
+          <div key={plan.id} className="rounded-xl border border-secondary-foreground/15 bg-background/60 p-4" data-testid={`card-home-plan-${plan.id}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-secondary-foreground">{plan.name}</p>
+                <p className="mt-1 text-xs text-secondary-foreground/70">{plan.slipLimit} slips · {plan.designLimit === -1 ? 'Unlimited designs' : `${plan.designLimit} ${plan.designLimit === 1 ? 'design' : 'designs'}`}</p>
+              </div>
+              <p className="font-mono text-sm font-bold text-secondary-foreground">${(plan.priceCents / 100).toFixed(2)} <span className="text-[10px] font-normal">{plan.billing === 'monthly' ? '/ month' : 'one-time'}</span></p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
