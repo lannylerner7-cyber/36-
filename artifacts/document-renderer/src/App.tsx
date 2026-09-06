@@ -12,6 +12,7 @@ import {
   useGetIntegrationStatus,
   useHealthCheck,
   useLookupRoutingNumber,
+  useRemoveBackground,
   useRenderSamplePdf,
   type RoutingLookupResponse,
   type SampleDocumentInput,
@@ -44,6 +45,85 @@ import {
 
 const queryClient = new QueryClient();
 
+function removeLogoBackgroundLocally(dataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      if (!context || canvas.width === 0 || canvas.height === 0) {
+        reject(new Error('Could not prepare the logo image.'));
+        return;
+      }
+
+      context.drawImage(image, 0, 0);
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const { data, width, height } = imageData;
+      const corners = [
+        [0, 0],
+        [width - 1, 0],
+        [0, height - 1],
+        [width - 1, height - 1],
+      ];
+      const background = corners.reduce(
+        (sum, [x, y]) => {
+          const offset = (y * width + x) * 4;
+          return [sum[0] + data[offset], sum[1] + data[offset + 1], sum[2] + data[offset + 2]];
+        },
+        [0, 0, 0],
+      ).map((channel) => channel / corners.length);
+      const tolerance = 58;
+      const visited = new Uint8Array(width * height);
+      const queue: number[] = [];
+
+      const isBackground = (pixelIndex: number) => {
+        const offset = pixelIndex * 4;
+        const distance = Math.sqrt(
+          (data[offset] - background[0]) ** 2 +
+          (data[offset + 1] - background[1]) ** 2 +
+          (data[offset + 2] - background[2]) ** 2,
+        );
+        return data[offset + 3] > 0 && distance <= tolerance;
+      };
+
+      const enqueue = (x: number, y: number) => {
+        if (x < 0 || y < 0 || x >= width || y >= height) return;
+        const pixelIndex = y * width + x;
+        if (visited[pixelIndex] || !isBackground(pixelIndex)) return;
+        visited[pixelIndex] = 1;
+        queue.push(pixelIndex);
+      };
+
+      for (let x = 0; x < width; x += 1) {
+        enqueue(x, 0);
+        enqueue(x, height - 1);
+      }
+      for (let y = 1; y < height - 1; y += 1) {
+        enqueue(0, y);
+        enqueue(width - 1, y);
+      }
+
+      for (let cursor = 0; cursor < queue.length; cursor += 1) {
+        const pixelIndex = queue[cursor];
+        const x = pixelIndex % width;
+        const y = Math.floor(pixelIndex / width);
+        data[pixelIndex * 4 + 3] = 0;
+        enqueue(x - 1, y);
+        enqueue(x + 1, y);
+        enqueue(x, y - 1);
+        enqueue(x, y + 1);
+      }
+
+      context.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    image.onerror = () => reject(new Error('Could not read the logo image.'));
+    image.src = dataUrl;
+  });
+}
+
 function Home() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SampleDocumentInput>({
@@ -66,6 +146,7 @@ function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [routingMessage, setRoutingMessage] = useState('');
   const [pdfMessage, setPdfMessage] = useState('');
+  const [logoMessage, setLogoMessage] = useState('');
   const [isPreviewMode, setIsPreviewMode] = useState(true);
 
   const integrations = useGetIntegrationStatus();
@@ -73,6 +154,7 @@ function Home() {
   const autocomplete = useAutocompletePlace();
   const routing = useLookupRoutingNumber();
   const pdf = useRenderSamplePdf();
+  const removeBackground = useRemoveBackground();
   const suggestions = autocomplete.data?.suggestions ?? [];
   const setField = <K extends keyof SampleDocumentInput>(key: K, value: SampleDocumentInput[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -111,9 +193,25 @@ function Home() {
   const handleLogoUpload = (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
+    setLogoMessage('');
     const reader = new FileReader();
     reader.addEventListener('load', () => {
-      if (typeof reader.result === 'string') setField('bankLogoDataUrl', reader.result);
+      if (typeof reader.result !== 'string') return;
+      setField('bankLogoDataUrl', reader.result);
+      removeBackground.mutate(
+        { data: { imageDataUrl: reader.result } },
+        {
+          onSuccess: (result) => setField('bankLogoDataUrl', result.imageDataUrl),
+          onError: () => {
+            void removeLogoBackgroundLocally(reader.result as string)
+              .then((cleanedLogo) => {
+                setField('bankLogoDataUrl', cleanedLogo);
+                setLogoMessage('Used the local background remover.');
+              })
+              .catch(() => setLogoMessage('Background removal unavailable; the original logo was kept.'));
+          },
+        },
+      );
     });
     reader.readAsDataURL(file);
   };
@@ -189,11 +287,12 @@ function Home() {
                 <div className="flex items-center gap-3">
                   <label htmlFor="bankLogo" className="flex h-10 flex-1 cursor-pointer items-center gap-2 rounded-md border border-input bg-card px-3 text-sm text-muted-foreground shadow-sm transition hover:border-muted-foreground/50">
                     <Upload size={15} className="text-accent" />
-                    <span className="truncate">{form.bankLogoDataUrl ? 'Logo uploaded' : 'Upload an image'}</span>
+                     <span className="truncate">{removeBackground.isPending ? 'Removing background…' : form.bankLogoDataUrl ? 'Logo uploaded' : 'Upload an image'}</span>
                     <input id="bankLogo" type="file" accept="image/*" className="sr-only" onChange={(event) => handleLogoUpload(event.target.files?.[0])} data-testid="input-bank-logo" />
                   </label>
                   {form.bankLogoDataUrl && <button type="button" className="text-[11px] font-semibold text-muted-foreground underline-offset-2 hover:text-foreground hover:underline" onClick={() => setField('bankLogoDataUrl', null)}>Remove</button>}
                 </div>
+                {logoMessage && <p className="mt-1 text-[10px] leading-4 text-amber-800">{logoMessage}</p>}
               </div>
               <div className="relative">
                 <TextField id="bankAddress" label="Bank address" value={placeInput || form.bankAddress} onChange={(value) => { setPlaceInput(value); setField('bankAddress', value); }} placeholder="Begin typing a physical address" onFocus={() => setShowSuggestions(true)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); searchPlaces(); } }} required />
@@ -326,7 +425,6 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     .map((line) => line.trim())
     .filter(Boolean);
   const bankName = form.bankName || routingLookup?.bankName || 'PAYEE BANK NAME';
-  const bankLogoUrl = form.bankLogoDataUrl || routingLookup?.bankLogoUrl;
   const payeeAddressLines = (form.payeeAddress || 'PAYEE ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
   const payorAddressLines = (form.payorAddress || 'PAYOR ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
 
@@ -335,10 +433,7 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
 
-    <div className="absolute left-[7.5%] top-[7.5%] flex h-[26%] w-[13%] items-center justify-center border border-[#282a25] bg-[#f8f8f0] p-[2%] text-center">
-      {bankLogoUrl ? <img src={bankLogoUrl} alt={`${bankName} logo`} className="max-h-full max-w-full object-contain" /> : <span className="text-[clamp(9px,2vw,19px)] font-black leading-[.95] tracking-[-.06em]">SRC<br />LOGO</span>}
-    </div>
-    <div className="absolute left-[23%] top-[8.3%] w-[37%] text-[clamp(7px,1.55vw,14px)] leading-[1.12]">
+    <div className="absolute left-[7.5%] top-[8.3%] w-[52%] text-[clamp(7px,1.55vw,14px)] leading-[1.12]">
       <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
       <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
       {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}

@@ -87,6 +87,26 @@ export const LookupRoutingNumberResponse = zod.object({
 
 
 /**
+ * @summary Remove the background from an uploaded bank logo
+ */
+export const removeBackgroundBodyImageDataUrlMax = 4194304;
+
+
+
+export const RemoveBackgroundBody = zod.object({
+  "imageDataUrl": zod.string().max(removeBackgroundBodyImageDataUrlMax)
+})
+
+export const removeBackgroundResponseImageDataUrlMax = 4194304;
+
+
+
+export const RemoveBackgroundResponse = zod.object({
+  "imageDataUrl": zod.string().max(removeBackgroundResponseImageDataUrlMax)
+})
+
+
+/**
  * @summary Render a safe sample document PDF
  */
 export const renderSamplePdfBodyPayeeNameMax = 100;
@@ -101,7 +121,7 @@ export const renderSamplePdfBodyBankNameMax = 100;
 
 export const renderSamplePdfBodyBankAddressMax = 200;
 
-export const renderSamplePdfBodyBankLogoDataUrlMax = 2097152;
+export const renderSamplePdfBodyBankLogoDataUrlMax = 4194304;
 
 export const renderSamplePdfBodyAccountNumberMax = 30;
 

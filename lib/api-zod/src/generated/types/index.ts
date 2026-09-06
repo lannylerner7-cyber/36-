@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './backgroundRemovalResult';
 export * from './errorResponse';
 export * from './healthStatus';
 export * from './integrationStatus';
@@ -15,6 +16,7 @@ export * from './placeAutocompleteInput';
 export * from './placeAutocompleteResponse';
 export * from './placeSuggestion';
 export * from './providerStatus';
+export * from './removeBackgroundInput';
 export * from './routingLookupInput';
 export * from './routingLookupResponse';
 export * from './routingLookupResponseLookupStatus';

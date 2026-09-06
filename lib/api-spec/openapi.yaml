@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: integrations
     description: External provider readiness and lookup operations
+  - name: images
+    description: Image preparation operations
   - name: documents
     description: Safe sample document rendering operations
 paths:
@@ -88,6 +90,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /images/remove-background:
+    post:
+      operationId: removeBackground
+      tags: [images]
+      summary: Remove the background from an uploaded bank logo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveBackgroundInput"
+      responses:
+        "200":
+          description: Background-removed logo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackgroundRemovalResult"
+        "400":
+          description: Invalid image data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Background removal provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: remove.bg is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /documents/pdf:
     post:
       operationId: renderSamplePdf
@@ -135,6 +173,20 @@ components:
         message:
           type: string
       required: [configured, provider, message]
+    RemoveBackgroundInput:
+      type: object
+      properties:
+        imageDataUrl:
+          type: string
+          maxLength: 4194304
+      required: [imageDataUrl]
+    BackgroundRemovalResult:
+      type: object
+      properties:
+        imageDataUrl:
+          type: string
+          maxLength: 4194304
+      required: [imageDataUrl]
     PlaceAutocompleteInput:
       type: object
       properties:
@@ -222,7 +274,7 @@ components:
           maxLength: 200
         bankLogoDataUrl:
           type: ["string", "null"]
-          maxLength: 2097152
+          maxLength: 4194304
         accountNumber:
           type: string
           maxLength: 30

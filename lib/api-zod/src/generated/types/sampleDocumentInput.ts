@@ -20,7 +20,7 @@ export interface SampleDocumentInput {
   /** @maxLength 200 */
   bankAddress: string;
   /**
-     * @maxLength 2097152
+     * @maxLength 4194304
      * @nullable
      */
   bankLogoDataUrl?: string | null;

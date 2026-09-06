@@ -21,6 +21,16 @@ export interface IntegrationStatus {
   pdf: ProviderStatus;
 }
 
+export interface RemoveBackgroundInput {
+  /** @maxLength 4194304 */
+  imageDataUrl: string;
+}
+
+export interface BackgroundRemovalResult {
+  /** @maxLength 4194304 */
+  imageDataUrl: string;
+}
+
 export interface PlaceAutocompleteInput {
   /**
      * @minLength 3
@@ -89,7 +99,7 @@ export interface SampleDocumentInput {
   /** @maxLength 200 */
   bankAddress: string;
   /**
-     * @maxLength 2097152
+     * @maxLength 4194304
      * @nullable
      */
   bankLogoDataUrl?: string | null;

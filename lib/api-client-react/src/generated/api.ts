@@ -20,12 +20,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BackgroundRemovalResult,
   ErrorResponse,
   HealthStatus,
   IntegrationStatus,
   PdfExportResponse,
   PlaceAutocompleteInput,
   PlaceAutocompleteResponse,
+  RemoveBackgroundInput,
   RoutingLookupInput,
   RoutingLookupResponse,
   SampleDocumentInput
@@ -353,6 +355,77 @@ export const useLookupRoutingNumber = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getLookupRoutingNumberMutationOptions(options));
+    }
+
+export const getRemoveBackgroundUrl = () => {
+
+
+
+
+  return `/api/images/remove-background`
+}
+
+/**
+ * @summary Remove the background from an uploaded bank logo
+ */
+export const removeBackground = async (removeBackgroundInput: RemoveBackgroundInput, options?: Parameters<typeof customFetch>[1]): Promise<BackgroundRemovalResult> => {
+
+  return customFetch<BackgroundRemovalResult>(getRemoveBackgroundUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(removeBackgroundInput)
+  }
+);}
+
+
+
+
+
+export const getRemoveBackgroundMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeBackground>>, TError,{data: BodyType<RemoveBackgroundInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeBackground>>, TError,{data: BodyType<RemoveBackgroundInput>}, TContext> => {
+
+const mutationKey = ['removeBackground'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeBackground>>, {data: BodyType<RemoveBackgroundInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  removeBackground(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveBackgroundMutationResult = NonNullable<Awaited<ReturnType<typeof removeBackground>>>
+    export type RemoveBackgroundMutationBody = BodyType<RemoveBackgroundInput>
+    export type RemoveBackgroundMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove the background from an uploaded bank logo
+ */
+export const useRemoveBackground = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeBackground>>, TError,{data: BodyType<RemoveBackgroundInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeBackground>>,
+        TError,
+        {data: BodyType<RemoveBackgroundInput>},
+        TContext
+      > => {
+      return useMutation(getRemoveBackgroundMutationOptions(options));
     }
 
 export const getRenderSamplePdfUrl = () => {
