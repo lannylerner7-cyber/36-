@@ -437,15 +437,13 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
 
-    <div className="absolute left-[7.5%] top-[8.3%] w-[52%] text-[clamp(7px,1.55vw,14px)] leading-[1.12]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
-          <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
-          {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
-          {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}
-        </div>
-        {bankLogoUrl && <img src={bankLogoUrl} alt={`${bankName} logo`} className="h-[5.5em] w-[18%] shrink-0 object-contain" data-testid="preview-bank-logo" />}
+    <div className={`absolute left-[7.5%] top-[8.3%] w-[52%] text-[clamp(7px,1.55vw,14px)] leading-[1.12] ${bankLogoUrl ? 'pl-[18%]' : ''}`}>
+      {bankLogoUrl && <img src={bankLogoUrl} alt={`${bankName} logo`} className="absolute left-0 top-0 h-[5.5em] w-[15%] object-contain" data-testid="preview-bank-logo" />}
+      <div>
+        <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
+        <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
+        {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
+        {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}
       </div>
     </div>
 
