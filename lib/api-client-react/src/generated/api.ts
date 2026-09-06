@@ -1398,6 +1398,83 @@ export const useCreateOrder = <TError = ErrorType<unknown>,
       return useMutation(getCreateOrderMutationOptions(options));
     }
 
+export const getGetBitcoinPaymentSettingsUrl = () => {
+
+
+
+
+  return `/api/payment-settings/bitcoin`
+}
+
+/**
+ * @summary Get customer-safe Bitcoin payment instructions
+ */
+export const getBitcoinPaymentSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<PaymentSettings> => {
+
+  return customFetch<PaymentSettings>(getGetBitcoinPaymentSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBitcoinPaymentSettingsQueryKey = () => {
+    return [
+    `/api/payment-settings/bitcoin`
+    ] as const;
+    }
+
+
+export const getGetBitcoinPaymentSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getBitcoinPaymentSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBitcoinPaymentSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBitcoinPaymentSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBitcoinPaymentSettings>>> = ({ signal }) => getBitcoinPaymentSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBitcoinPaymentSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBitcoinPaymentSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getBitcoinPaymentSettings>>>
+export type GetBitcoinPaymentSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get customer-safe Bitcoin payment instructions
+ */
+
+export function useGetBitcoinPaymentSettings<TData = Awaited<ReturnType<typeof getBitcoinPaymentSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBitcoinPaymentSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBitcoinPaymentSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getLookupOrderUrl = () => {
 
 

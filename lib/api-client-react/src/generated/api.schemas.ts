@@ -166,6 +166,11 @@ export interface CreateOrderInput {
      */
   name: string;
   email: string;
+  /**
+     * @minLength 1
+     * @maxLength 320
+     */
+  billingAddress: string;
   paymentMethod: CreateOrderInputPaymentMethod;
   acceptedPaymentTerms: boolean;
 }
@@ -177,6 +182,7 @@ export interface OrderLookupInput {
      */
   orderNumber: string;
   email: string;
+  billingAddress?: string;
 }
 
 export type OrderPlanId = typeof OrderPlanId[keyof typeof OrderPlanId];

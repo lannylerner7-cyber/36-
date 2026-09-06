@@ -63,6 +63,7 @@ export function serializeOrder(order: Order) {
     planId: order.planId,
     name: order.name,
     email: order.email,
+    billingAddress: order.billingAddress,
     paymentMethod: order.paymentMethod,
     status: order.status,
     amountCents: order.amountCents,

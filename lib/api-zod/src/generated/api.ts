@@ -375,12 +375,15 @@ export const ListPlansResponse = zod.array(ListPlansResponseItem)
  */
 export const createOrderBodyNameMax = 120;
 
+export const createOrderBodyBillingAddressMax = 320;
+
 
 
 export const CreateOrderBody = zod.object({
   "planId": zod.enum(['starter', 'pro', 'enterprise']),
   "name": zod.string().min(1).max(createOrderBodyNameMax),
   "email": zod.string(),
+  "billingAddress": zod.string().min(1).max(createOrderBodyBillingAddressMax),
   "paymentMethod": zod.enum(['card_manual', 'bitcoin']),
   "acceptedPaymentTerms": zod.boolean()
 })
@@ -402,6 +405,16 @@ export const CreateOrderResponse = zod.object({
 
 
 /**
+ * @summary Get customer-safe Bitcoin payment instructions
+ */
+export const GetBitcoinPaymentSettingsResponse = zod.object({
+  "bitcoinWallet": zod.string(),
+  "bitcoinQrUrl": zod.string().nullable(),
+  "bitcoinInstructions": zod.string()
+})
+
+
+/**
  * @summary Track an order by order number and email
  */
 export const lookupOrderBodyOrderNumberMin = 6;
@@ -411,7 +424,8 @@ export const lookupOrderBodyOrderNumberMax = 40;
 
 export const LookupOrderBody = zod.object({
   "orderNumber": zod.string().min(lookupOrderBodyOrderNumberMin).max(lookupOrderBodyOrderNumberMax),
-  "email": zod.string()
+  "email": zod.string(),
+  "billingAddress": zod.string().optional()
 })
 
 export const LookupOrderResponse = zod.object({

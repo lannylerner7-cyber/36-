@@ -73,6 +73,7 @@ export const ordersTable = pgTable("depslip_orders", {
   planId: text("plan_id").notNull(),
   name: text("name").notNull(),
   email: text("email").notNull(),
+  billingAddress: text("billing_address").notNull().default(""),
   paymentMethod: text("payment_method").notNull(),
   status: text("status").notNull().default("pending"),
   amountCents: integer("amount_cents").notNull(),

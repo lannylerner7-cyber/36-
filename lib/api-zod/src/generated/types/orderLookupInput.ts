@@ -13,4 +13,5 @@ export interface OrderLookupInput {
      */
   orderNumber: string;
   email: string;
+  billingAddress?: string;
 }

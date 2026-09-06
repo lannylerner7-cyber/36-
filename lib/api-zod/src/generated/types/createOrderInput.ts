@@ -16,6 +16,11 @@ export interface CreateOrderInput {
      */
   name: string;
   email: string;
+  /**
+     * @minLength 1
+     * @maxLength 320
+     */
+  billingAddress: string;
   paymentMethod: CreateOrderInputPaymentMethod;
   acceptedPaymentTerms: boolean;
 }

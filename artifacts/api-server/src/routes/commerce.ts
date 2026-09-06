@@ -3,17 +3,31 @@ import { Router, type IRouter } from "express";
 import {
   CreateOrderBody,
   CreateOrderResponse,
+  GetBitcoinPaymentSettingsResponse,
   ListPlansResponse,
   LookupOrderBody,
   LookupOrderResponse,
 } from "@workspace/api-zod";
-import { db, ordersTable } from "@workspace/db";
+import { db, ordersTable, paymentSettingsTable } from "@workspace/db";
 import { getPlan, isValidEmail, makeOrderNumber, PLANS, serializeOrder } from "../lib/depslip";
 
 const router: IRouter = Router();
 
 router.get("/plans", (_req, res): void => {
   res.json(ListPlansResponse.parse(Object.values(PLANS)));
+});
+
+router.get("/payment-settings/bitcoin", async (_req, res): Promise<void> => {
+  const [settings] = await db
+    .select()
+    .from(paymentSettingsTable)
+    .where(eq(paymentSettingsTable.id, "default"))
+    .limit(1);
+  res.json(GetBitcoinPaymentSettingsResponse.parse({
+    bitcoinWallet: settings?.bitcoinWallet ?? "",
+    bitcoinQrUrl: settings?.bitcoinQrUrl ?? null,
+    bitcoinInstructions: settings?.bitcoinInstructions ?? "",
+  }));
 });
 
 router.post("/orders", async (req, res): Promise<void> => {
@@ -42,6 +56,7 @@ router.post("/orders", async (req, res): Promise<void> => {
       planId: plan.id,
       name: parsed.data.name,
       email: parsed.data.email.toLowerCase(),
+      billingAddress: parsed.data.billingAddress,
       paymentMethod: parsed.data.paymentMethod,
       status: "pending",
       amountCents: plan.priceCents,
