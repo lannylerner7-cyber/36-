@@ -1,6 +1,6 @@
 # Document Renderer
 
-Document Renderer prepares print-accurate deposit-slip previews with protected account data, a browser-only sample watermark, and server-side integration boundaries.
+Document Renderer prepares print-accurate deposit-slip previews with protected account data and server-side integration boundaries.
 
 ## Run & Operate
 
@@ -36,7 +36,7 @@ Document Renderer prepares print-accurate deposit-slip previews with protected a
 
 ## Architecture decisions
 
-- The first release defaults to browser preview mode with `SAMPLE / VOID`, while print output removes that browser-only watermark.
+- Preview and print output use the same clean document surface without sample-only watermark text.
 - Account data remains protected in the UI and preview; print mode includes the mapped MICR E-13B line.
 - GnuMICR is bundled locally and inlined as Base64 at build time; its GPL license is stored beside the font asset.
 - The frontend and PDF boundary consume one typed OpenAPI contract; generated hooks are the only client API surface.
@@ -58,7 +58,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - The routing adapter returns bank metadata only when `ROUTING_DIRECTORY_PATH` points to a current authorized directory snapshot; otherwise it returns checksum status with an explicit metadata-unavailable message.
 - Do not bundle the outdated directory files from the Moov repository as production data. The parser supports their documented JSON/fixed-width shapes, but a current authorized file must be supplied separately.
 - Bank logo URLs are UI-only metadata. The optional Google favicon fallback is not an authoritative bank-logo source and must not be used for printed branding.
-- Browser print is the current available output path; it strips the browser-only sample watermark while preserving the document geometry. Server PDF export remains disabled until its renderer is configured.
+- Browser print is the current available output path and preserves the document geometry. Server PDF export remains disabled until its renderer is configured.
 - MICR output uses the supplied A / C / D delimiter mapping; bank-equipment scan validation is still required before production use.
 - The UI includes a themed local-first policy footer; Canva remains optional and is not required for the renderer to operate.
 - After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen` before using generated hooks or Zod schemas.

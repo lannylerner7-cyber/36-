@@ -23,8 +23,6 @@ import {
   Check,
   CheckCircle2,
   ClipboardCheck,
-  Eye,
-  EyeOff,
   FileDown,
   Info,
   Landmark,
@@ -139,7 +137,7 @@ function Home() {
     checkNumber: '10427',
     date: new Date().toISOString().slice(0, 10),
     amount: 0,
-    memo: 'VOID — SAMPLE ONLY',
+    memo: '',
   });
   const [placeInput, setPlaceInput] = useState('');
   const [amountInput, setAmountInput] = useState('0.00');
@@ -147,7 +145,6 @@ function Home() {
   const [routingMessage, setRoutingMessage] = useState('');
   const [pdfMessage, setPdfMessage] = useState('');
   const [logoMessage, setLogoMessage] = useState('');
-  const [isPreviewMode, setIsPreviewMode] = useState(true);
 
   const integrations = useGetIntegrationStatus();
   const health = useHealthCheck();
@@ -275,11 +272,6 @@ function Home() {
             <SafetyPill icon={<ClipboardCheck size={15} />} label="Account protected" />
           </div>
 
-          <button type="button" onClick={() => setIsPreviewMode((current) => !current)} className="mb-7 flex w-full items-center justify-between rounded-md border border-border bg-card/60 px-3 py-2.5 text-left transition hover:bg-muted" data-testid="toggle-preview-mode" aria-pressed={isPreviewMode}>
-            <span className="flex items-center gap-2 text-[11px] font-semibold text-foreground">{isPreviewMode ? <Eye size={15} className="text-accent" /> : <EyeOff size={15} className="text-accent" />} Browser preview watermark</span>
-            <span className={`rounded-full px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${isPreviewMode ? 'bg-amber-100 text-amber-900' : 'bg-secondary text-secondary-foreground'}`}>{isPreviewMode ? 'On' : 'Off'}</span>
-          </button>
-
           <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
             <FieldGroup label="Recipient & bank" number="A">
               <TextField id="payeeName" label="Payee name" value={form.payeeName} onChange={(value) => setField('payeeName', value)} placeholder="Northwind Operations" required />
@@ -343,7 +335,7 @@ function Home() {
                  <TextField id="accountNumber" label="Account number" value={form.accountNumber} onChange={(value) => setField('accountNumber', value.replace(/\D/g, '').slice(0, 30))} placeholder="Digits only" inputMode="numeric" helper="Stored in memory only; preview matches the entered value." required />
                    <TextField id="amount" label="Amount" value={amountInput} onChange={handleAmountChange} placeholder="0.00" inputMode="decimal" required />
               </div>
-               <TextField id="memo" label="Memo" value={form.memo} onChange={(value) => setField('memo', value)} placeholder="VOID — SAMPLE ONLY" required />
+               <TextField id="memo" label="Memo" value={form.memo} onChange={(value) => setField('memo', value)} placeholder="Add a memo or reference" required />
             </FieldGroup>
 
              <div className="border-t border-border pt-5">
@@ -373,14 +365,14 @@ function Home() {
                 <span className="mt-1 block">No production negotiability</span>
               </div>
             </div>
-             <DocumentPreview form={form} isPreviewMode={isPreviewMode} routingLookup={routing.data} />
+              <DocumentPreview form={form} routingLookup={routing.data} />
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <IntegrationPanel data={integrations.data?.places} label="Places / address suggestions" icon={<MapPin size={16} />} loading={integrations.isLoading} />
               <IntegrationPanel data={integrations.data?.routing} label="Routing / bank validation" icon={<Landmark size={16} />} loading={integrations.isLoading} />
               <IntegrationPanel data={integrations.data?.pdf} label="PDF / export boundary" icon={<FileDown size={16} />} loading={integrations.isLoading} />
               <div className="rounded-lg border border-border bg-card/65 p-4">
                 <div className="mb-3 flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold"><Sparkles size={15} className="text-accent" /> Readiness notes</span><button type="button" onClick={retryStatus} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" data-testid="button-refresh-status" aria-label="Refresh readiness status"><RefreshCw size={14} /></button></div>
-                {integrations.isError ? <p className="text-xs leading-5 text-destructive" data-testid="status-integration-error">Integration status could not be loaded. Refresh to retry.</p> : <p className="text-xs leading-5 text-muted-foreground">Only configured providers can make external requests. Sample rendering remains visibly marked at every boundary.</p>}
+                {integrations.isError ? <p className="text-xs leading-5 text-destructive" data-testid="status-integration-error">Integration status could not be loaded. Refresh to retry.</p> : <p className="text-xs leading-5 text-muted-foreground">Only configured providers can make external requests. The local preview remains available at every boundary.</p>}
               </div>
             </div>
              <p className="mt-6 flex items-start gap-2 text-[11px] leading-5 text-muted-foreground"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-accent" /> Print-safe note: account and MICR values remain visible exactly as entered; print mode uses the locally bundled GnuMICR E-13B font. Use only with an authorized deposit-slip workflow.</p>
@@ -395,7 +387,7 @@ function Home() {
           </div>
           <div className="max-w-3xl">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-accent">Use policy</p>
-            <p className="mt-1">Use only for authorized deposit-slip workflows. Account and MICR values are shown exactly as entered. External requests happen only through configured provider actions; browser print removes the preview watermark and uses the bundled MICR font.</p>
+            <p className="mt-1">Use only for authorized deposit-slip workflows. Account and MICR values are shown exactly as entered. External requests happen only through configured provider actions; browser print uses the bundled MICR font.</p>
           </div>
         </div>
       </footer>
@@ -415,7 +407,7 @@ function TextField({ id, label, value, onChange, placeholder, type = 'text', hel
   return <label className="block" htmlFor={id}><span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">{label}{required && <span className="ml-1 text-accent" aria-hidden="true">*</span>}</span><input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} onFocus={onFocus} onKeyDown={onKeyDown} placeholder={placeholder} inputMode={inputMode} required={required} min={min} step={step} className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground/55 hover:border-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15" data-testid={`input-${id}`} />{helper && <span className="mt-1 block font-mono text-[9px] leading-4 text-muted-foreground">{helper}</span>}</label>;
 }
 
-function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleDocumentInput; isPreviewMode: boolean; routingLookup?: RoutingLookupResponse }) {
+function DocumentPreview({ form, routingLookup }: { form: SampleDocumentInput; routingLookup?: RoutingLookupResponse }) {
   const routingNumber = form.routingNumber || '000000000';
   const accountNumber = form.accountNumber || '000000000000';
   const checkNumber = form.checkNumber || '00000';
@@ -482,12 +474,10 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
       <div className="px-[6%] py-[10%]"><span className="mr-[14%]">$</span>{amountLabel}</div>
     </div>
 
-    <div className={`absolute bottom-[6.5%] left-1/2 -translate-x-1/2 font-mono text-[clamp(8px,1.5vw,14px)] tracking-[.1em] micr-line ${isPreviewMode ? 'text-[#777a70]' : 'text-[#161714]'}`} aria-label="MICR E-13B line">
+    <div className="absolute bottom-[6.5%] left-1/2 -translate-x-1/2 font-mono text-[clamp(8px,1.5vw,14px)] tracking-[.1em] text-[#161714] micr-line" aria-label="MICR E-13B line">
       <span className="screen-micr">{micrValue}</span>
       <span className="print-micr">{micrValue}</span>
     </div>
-    <div className="absolute bottom-[3.5%] right-[6.3%] font-mono text-[clamp(5px,1vw,9px)] tracking-[.08em] text-[#8d3d31]">VOID / SAMPLE ONLY</div>
-    {isPreviewMode && <div className="preview-watermark pointer-events-none absolute inset-0 flex items-center justify-center" data-preview-watermark><div className="rotate-[-12deg] select-none font-mono text-[clamp(16px,5vw,48px)] font-bold tracking-[.16em] text-[#8d3d31]/[.11]">SAMPLE / VOID</div></div>}
   </div>;
 }
 
