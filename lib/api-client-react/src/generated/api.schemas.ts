@@ -5,6 +5,323 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AdminLoginInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  username: string;
+  /**
+     * @minLength 1
+     * @maxLength 256
+     */
+  password: string;
+}
+
+export type AdminSessionResponseRole = typeof AdminSessionResponseRole[keyof typeof AdminSessionResponseRole];
+
+
+export const AdminSessionResponseRole = {
+  admin: 'admin',
+} as const;
+
+export interface AdminSessionResponse {
+  authenticated: boolean;
+  role: AdminSessionResponseRole;
+}
+
+export interface TokenLoginInput {
+  /**
+     * @minLength 16
+     * @maxLength 128
+     */
+  token: string;
+}
+
+export type UserSummaryStatus = typeof UserSummaryStatus[keyof typeof UserSummaryStatus];
+
+
+export const UserSummaryStatus = {
+  active: 'active',
+  restricted: 'restricted',
+  deleted: 'deleted',
+} as const;
+
+export interface UserSummary {
+  id: string;
+  name: string;
+  email: string;
+  status: UserSummaryStatus;
+  slipLimit: number;
+  slipsUsed: number;
+  designLimit: number;
+  designsUsed: number;
+  pdfPrintCount: number;
+  browserPrintCount: number;
+  /** @nullable */
+  lockoutUntil: string | null;
+  createdAt: string;
+}
+
+export type AdminUserTokenStatus = typeof AdminUserTokenStatus[keyof typeof AdminUserTokenStatus];
+
+
+export const AdminUserTokenStatus = {
+  active: 'active',
+  revoked: 'revoked',
+} as const;
+
+export type AdminUser = UserSummary & {
+  tokenId: string;
+  tokenStatus: AdminUserTokenStatus;
+};
+
+export interface UserSessionResponse {
+  authenticated: boolean;
+  user: UserSummary;
+}
+
+export interface PayeeInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+  /** @maxLength 200 */
+  address: string;
+  /** @maxLength 100 */
+  bankName: string;
+  /** @maxLength 200 */
+  bankAddress: string;
+  /** @pattern ^[0-9]{9}$ */
+  routingNumber: string;
+  /** @maxLength 30 */
+  accountNumber: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  bankLogoUrl: string | null;
+}
+
+export type Payee = PayeeInput & {
+  id: string;
+  createdAt: string;
+};
+
+export type PayeeListResponse = Payee[];
+
+export type PlanId = typeof PlanId[keyof typeof PlanId];
+
+
+export const PlanId = {
+  starter: 'starter',
+  pro: 'pro',
+  enterprise: 'enterprise',
+} as const;
+
+export type PlanBilling = typeof PlanBilling[keyof typeof PlanBilling];
+
+
+export const PlanBilling = {
+  one_time: 'one_time',
+  monthly: 'monthly',
+} as const;
+
+export interface Plan {
+  id: PlanId;
+  name: string;
+  priceCents: number;
+  currency: string;
+  slipLimit: number;
+  designLimit: number;
+  billing: PlanBilling;
+  description: string;
+}
+
+export type PlanListResponse = Plan[];
+
+export type CreateOrderInputPlanId = typeof CreateOrderInputPlanId[keyof typeof CreateOrderInputPlanId];
+
+
+export const CreateOrderInputPlanId = {
+  starter: 'starter',
+  pro: 'pro',
+  enterprise: 'enterprise',
+} as const;
+
+export type CreateOrderInputPaymentMethod = typeof CreateOrderInputPaymentMethod[keyof typeof CreateOrderInputPaymentMethod];
+
+
+export const CreateOrderInputPaymentMethod = {
+  card_manual: 'card_manual',
+  bitcoin: 'bitcoin',
+} as const;
+
+export interface CreateOrderInput {
+  planId: CreateOrderInputPlanId;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  email: string;
+  paymentMethod: CreateOrderInputPaymentMethod;
+  acceptedPaymentTerms: boolean;
+}
+
+export interface OrderLookupInput {
+  /**
+     * @minLength 6
+     * @maxLength 40
+     */
+  orderNumber: string;
+  email: string;
+}
+
+export type OrderPlanId = typeof OrderPlanId[keyof typeof OrderPlanId];
+
+
+export const OrderPlanId = {
+  starter: 'starter',
+  pro: 'pro',
+  enterprise: 'enterprise',
+} as const;
+
+export type OrderPaymentMethod = typeof OrderPaymentMethod[keyof typeof OrderPaymentMethod];
+
+
+export const OrderPaymentMethod = {
+  card_manual: 'card_manual',
+  bitcoin: 'bitcoin',
+} as const;
+
+export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
+
+
+export const OrderStatus = {
+  pending: 'pending',
+  successful: 'successful',
+  failed: 'failed',
+} as const;
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  planId: OrderPlanId;
+  name: string;
+  email: string;
+  paymentMethod: OrderPaymentMethod;
+  status: OrderStatus;
+  amountCents: number;
+  currency: string;
+  acceptedPaymentTerms: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UsageInputKind = typeof UsageInputKind[keyof typeof UsageInputKind];
+
+
+export const UsageInputKind = {
+  pdf: 'pdf',
+  browser_print: 'browser_print',
+} as const;
+
+export interface UsageInput {
+  kind: UsageInputKind;
+}
+
+export type UsageResponseKind = typeof UsageResponseKind[keyof typeof UsageResponseKind];
+
+
+export const UsageResponseKind = {
+  pdf: 'pdf',
+  browser_print: 'browser_print',
+} as const;
+
+export interface UsageResponse {
+  kind: UsageResponseKind;
+  slipsUsed: number;
+  slipLimit: number;
+  remaining: number;
+}
+
+export interface AdminOverview {
+  totalUsers: number;
+  activeUsers: number;
+  restrictedUsers: number;
+  totalPdfPrints: number;
+  totalBrowserPrints: number;
+  pendingOrders: number;
+  successfulOrders: number;
+  failedOrders: number;
+}
+
+export type AdminUserListResponse = AdminUser[];
+
+export type CreateTokenInputPlanId = typeof CreateTokenInputPlanId[keyof typeof CreateTokenInputPlanId];
+
+
+export const CreateTokenInputPlanId = {
+  starter: 'starter',
+  pro: 'pro',
+  enterprise: 'enterprise',
+} as const;
+
+export interface CreateTokenInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  email: string;
+  planId: CreateTokenInputPlanId;
+}
+
+export interface IssuedTokenResponse {
+  tokenId: string;
+  token: string;
+  user: UserSummary;
+}
+
+export type UserStatusInputStatus = typeof UserStatusInputStatus[keyof typeof UserStatusInputStatus];
+
+
+export const UserStatusInputStatus = {
+  active: 'active',
+  restricted: 'restricted',
+  deleted: 'deleted',
+} as const;
+
+export interface UserStatusInput {
+  status: UserStatusInputStatus;
+}
+
+export type AdminOrderListResponse = Order[];
+
+export type OrderStatusInputStatus = typeof OrderStatusInputStatus[keyof typeof OrderStatusInputStatus];
+
+
+export const OrderStatusInputStatus = {
+  pending: 'pending',
+  successful: 'successful',
+  failed: 'failed',
+} as const;
+
+export interface OrderStatusInput {
+  status: OrderStatusInputStatus;
+}
+
+export interface PaymentSettings {
+  bitcoinWallet: string;
+  /** @nullable */
+  bitcoinQrUrl: string | null;
+  bitcoinInstructions: string;
+}
+
+export type PaymentSettingsInput = PaymentSettings;
+
 export interface HealthStatus {
   status: string;
 }

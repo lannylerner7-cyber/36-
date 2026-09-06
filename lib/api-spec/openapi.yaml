@@ -16,6 +16,14 @@ tags:
     description: Image preparation operations
   - name: documents
     description: Safe sample document rendering operations
+  - name: auth
+    description: Admin and customer token sessions
+  - name: payees
+    description: Saved payee profiles for authenticated customers
+  - name: commerce
+    description: Plans and manual payment order tracking
+  - name: admin
+    description: Protected administration operations
 paths:
   /healthz:
     get:
@@ -144,8 +152,812 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PdfExportResponse"
+  /auth/admin/login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Start an admin session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Admin session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSessionResponse"
+        "401":
+          description: Invalid admin credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/admin/logout:
+    post:
+      operationId: adminLogout
+      tags: [auth]
+      summary: End the admin session
+      responses:
+        "204":
+          description: Admin session ended
+  /auth/admin/session:
+    get:
+      operationId: getAdminSession
+      tags: [auth]
+      summary: Get the current admin session
+      responses:
+        "200":
+          description: Current admin session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSessionResponse"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/token/login:
+    post:
+      operationId: tokenLogin
+      tags: [auth]
+      summary: Sign in with an issued customer access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenLoginInput"
+      responses:
+        "200":
+          description: Customer session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSessionResponse"
+        "401":
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: Token temporarily locked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/token/logout:
+    post:
+      operationId: tokenLogout
+      tags: [auth]
+      summary: End the customer session
+      responses:
+        "204":
+          description: Customer session ended
+  /auth/session:
+    get:
+      operationId: getUserSession
+      tags: [auth]
+      summary: Get the current customer session
+      responses:
+        "200":
+          description: Current customer session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSessionResponse"
+        "401":
+          description: Customer session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteUserAccount
+      tags: [auth]
+      summary: Soft-delete the current customer account
+      responses:
+        "204":
+          description: Customer account deactivated
+        "401":
+          description: Customer session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /payees:
+    get:
+      operationId: listPayees
+      tags: [payees]
+      summary: List saved payee profiles
+      responses:
+        "200":
+          description: Saved payees
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeListResponse"
+        "401":
+          description: Customer session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createPayee
+      tags: [payees]
+      summary: Save a payee profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeInput"
+      responses:
+        "201":
+          description: Payee saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          description: Customer session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /payees/{payeeId}:
+    delete:
+      operationId: deletePayee
+      tags: [payees]
+      summary: Delete a saved payee profile
+      parameters:
+        - $ref: "#/components/parameters/PayeeId"
+      responses:
+        "204":
+          description: Payee deleted
+        "401":
+          description: Customer session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payee not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /plans:
+    get:
+      operationId: listPlans
+      tags: [commerce]
+      summary: List available plans
+      responses:
+        "200":
+          description: Available plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanListResponse"
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [commerce]
+      summary: Create a manual-payment order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /orders/lookup:
+    post:
+      operationId: lookupOrder
+      tags: [commerce]
+      summary: Track an order by order number and email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderLookupInput"
+      responses:
+        "200":
+          description: Order status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /documents/usage:
+    post:
+      operationId: recordDocumentUsage
+      tags: [documents]
+      summary: Record a PDF or browser print usage event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsageInput"
+      responses:
+        "200":
+          description: Updated usage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageResponse"
+        "401":
+          description: Customer session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Usage limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Get admin dashboard totals
+      responses:
+        "200":
+          description: Admin overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List customer token accounts and usage
+      responses:
+        "200":
+          description: Customer accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserListResponse"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/tokens:
+    post:
+      operationId: createAdminToken
+      tags: [admin]
+      summary: Issue a customer token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTokenInput"
+      responses:
+        "201":
+          description: Token created; plaintext token is returned once
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedTokenResponse"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/tokens/{tokenId}/reveal:
+    post:
+      operationId: revealAdminToken
+      tags: [admin]
+      summary: Reveal a token through an audited encrypted recovery action
+      parameters:
+        - $ref: "#/components/parameters/TokenId"
+      responses:
+        "200":
+          description: Revealed token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedTokenResponse"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/tokens/{tokenId}/revoke:
+    post:
+      operationId: revokeAdminToken
+      tags: [admin]
+      summary: Revoke a customer token
+      parameters:
+        - $ref: "#/components/parameters/TokenId"
+      responses:
+        "204":
+          description: Token revoked
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/users/{userId}/status:
+    patch:
+      operationId: updateAdminUserStatus
+      tags: [admin]
+      summary: Restrict or restore a customer account
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserStatusInput"
+      responses:
+        "200":
+          description: Updated customer account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [admin]
+      summary: List orders for manual payment review
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrderListResponse"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/orders/{orderId}/status:
+    patch:
+      operationId: updateAdminOrderStatus
+      tags: [admin]
+      summary: Mark an order pending, successful, or failed
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusInput"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/settings/payment:
+    get:
+      operationId: getAdminPaymentSettings
+      tags: [admin]
+      summary: Get BTC payment configuration
+      responses:
+        "200":
+          description: Payment settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSettings"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateAdminPaymentSettings
+      tags: [admin]
+      summary: Update BTC payment configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentSettingsInput"
+      responses:
+        "200":
+          description: Updated payment settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSettings"
+        "401":
+          description: Admin session required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
+  parameters:
+    PayeeId:
+      name: payeeId
+      in: path
+      required: true
+      schema:
+        type: string
+    TokenId:
+      name: tokenId
+      in: path
+      required: true
+      schema:
+        type: string
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
+    AdminLoginInput:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 120
+        password:
+          type: string
+          minLength: 1
+          maxLength: 256
+      required: [username, password]
+    AdminSessionResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        role:
+          type: string
+          enum: [admin]
+      required: [authenticated, role]
+    TokenLoginInput:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 16
+          maxLength: 128
+      required: [token]
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum: [active, restricted, deleted]
+        slipLimit:
+          type: number
+        slipsUsed:
+          type: number
+        designLimit:
+          type: number
+        designsUsed:
+          type: number
+        pdfPrintCount:
+          type: number
+        browserPrintCount:
+          type: number
+        lockoutUntil:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, name, email, status, slipLimit, slipsUsed, designLimit, designsUsed, pdfPrintCount, browserPrintCount, lockoutUntil, createdAt]
+    AdminUser:
+      allOf:
+        - $ref: "#/components/schemas/UserSummary"
+        - type: object
+          properties:
+            tokenId:
+              type: string
+            tokenStatus:
+              type: string
+              enum: [active, revoked]
+          required: [tokenId, tokenStatus]
+    UserSessionResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserSummary"
+      required: [authenticated, user]
+    PayeeInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 200
+        bankName:
+          type: string
+          maxLength: 100
+        bankAddress:
+          type: string
+          maxLength: 200
+        routingNumber:
+          type: string
+          pattern: "^[0-9]{9}$"
+        accountNumber:
+          type: string
+          maxLength: 30
+        bankLogoUrl:
+          type: ["string", "null"]
+          maxLength: 500
+      required: [name, address, bankName, bankAddress, routingNumber, accountNumber, bankLogoUrl]
+    Payee:
+      allOf:
+        - $ref: "#/components/schemas/PayeeInput"
+        - type: object
+          properties:
+            id:
+              type: string
+            createdAt:
+              type: string
+          required: [id, createdAt]
+    PayeeListResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Payee"
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+          enum: [starter, pro, enterprise]
+        name:
+          type: string
+        priceCents:
+          type: number
+        currency:
+          type: string
+        slipLimit:
+          type: number
+        designLimit:
+          type: number
+        billing:
+          type: string
+          enum: [one_time, monthly]
+        description:
+          type: string
+      required: [id, name, priceCents, currency, slipLimit, designLimit, billing, description]
+    PlanListResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Plan"
+    CreateOrderInput:
+      type: object
+      properties:
+        planId:
+          type: string
+          enum: [starter, pro, enterprise]
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+        paymentMethod:
+          type: string
+          enum: [card_manual, bitcoin]
+        acceptedPaymentTerms:
+          type: boolean
+      required: [planId, name, email, paymentMethod, acceptedPaymentTerms]
+    OrderLookupInput:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+          minLength: 6
+          maxLength: 40
+        email:
+          type: string
+      required: [orderNumber, email]
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        orderNumber:
+          type: string
+        planId:
+          type: string
+          enum: [starter, pro, enterprise]
+        name:
+          type: string
+        email:
+          type: string
+        paymentMethod:
+          type: string
+          enum: [card_manual, bitcoin]
+        status:
+          type: string
+          enum: [pending, successful, failed]
+        amountCents:
+          type: number
+        currency:
+          type: string
+        acceptedPaymentTerms:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, orderNumber, planId, name, email, paymentMethod, status, amountCents, currency, acceptedPaymentTerms, createdAt, updatedAt]
+    UsageInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [pdf, browser_print]
+      required: [kind]
+    UsageResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [pdf, browser_print]
+        slipsUsed:
+          type: number
+        slipLimit:
+          type: number
+        remaining:
+          type: number
+      required: [kind, slipsUsed, slipLimit, remaining]
+    AdminOverview:
+      type: object
+      properties:
+        totalUsers:
+          type: number
+        activeUsers:
+          type: number
+        restrictedUsers:
+          type: number
+        totalPdfPrints:
+          type: number
+        totalBrowserPrints:
+          type: number
+        pendingOrders:
+          type: number
+        successfulOrders:
+          type: number
+        failedOrders:
+          type: number
+      required: [totalUsers, activeUsers, restrictedUsers, totalPdfPrints, totalBrowserPrints, pendingOrders, successfulOrders, failedOrders]
+    AdminUserListResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/AdminUser"
+    CreateTokenInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+        planId:
+          type: string
+          enum: [starter, pro, enterprise]
+      required: [name, email, planId]
+    IssuedTokenResponse:
+      type: object
+      properties:
+        tokenId:
+          type: string
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSummary"
+      required: [tokenId, token, user]
+    UserStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, restricted, deleted]
+      required: [status]
+    AdminOrderListResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Order"
+    OrderStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, successful, failed]
+      required: [status]
+    PaymentSettings:
+      type: object
+      properties:
+        bitcoinWallet:
+          type: string
+        bitcoinQrUrl:
+          type: ["string", "null"]
+        bitcoinInstructions:
+          type: string
+      required: [bitcoinWallet, bitcoinQrUrl, bitcoinInstructions]
+    PaymentSettingsInput:
+      allOf:
+        - $ref: "#/components/schemas/PaymentSettings"
     HealthStatus:
       type: object
       properties:

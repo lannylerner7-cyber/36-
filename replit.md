@@ -41,6 +41,9 @@ Document Renderer prepares print-accurate deposit-slip previews with protected a
 - GnuMICR is bundled locally and inlined as Base64 at build time; its GPL license is stored beside the font asset.
 - The frontend and PDF boundary consume one typed OpenAPI contract; generated hooks are the only client API surface.
 - External provider credentials stay server-side. Missing credentials are represented as readiness state, not silent fallbacks.
+- Operator access uses secret-backed custom credentials at `/admin`; customer access uses issued tokens with hashed lookup values and encrypted admin-reveal values.
+- Raw card numbers, expiry dates, and CVVs are never accepted or stored. Card checkout creates a manual terminal-payment request; Bitcoin instructions are operator-managed.
+- Customer deletion is a soft delete: sessions and tokens are revoked while order and audit records remain available for compliance review.
 - Routing numbers receive local ABA checksum validation before an optional local directory lookup; checksum validity never claims bank ownership.
 - The renderer's internal paper geometry is fixed at 8 in × 4.5 in; responsive scaling changes presentation, not document dimensions.
 

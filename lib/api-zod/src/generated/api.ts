@@ -154,3 +154,505 @@ export const RenderSamplePdfResponse = zod.object({
 })
 
 
+/**
+ * @summary Start an admin session
+ */
+export const adminLoginBodyUsernameMax = 120;
+
+export const adminLoginBodyPasswordMax = 256;
+
+
+
+export const AdminLoginBody = zod.object({
+  "username": zod.string().min(1).max(adminLoginBodyUsernameMax),
+  "password": zod.string().min(1).max(adminLoginBodyPasswordMax)
+})
+
+export const AdminLoginResponse = zod.object({
+  "authenticated": zod.boolean(),
+  "role": zod.enum(['admin'])
+})
+
+
+/**
+ * @summary End the admin session
+ */
+export const AdminLogoutResponse = zod.void()
+
+
+/**
+ * @summary Get the current admin session
+ */
+export const GetAdminSessionResponse = zod.object({
+  "authenticated": zod.boolean(),
+  "role": zod.enum(['admin'])
+})
+
+
+/**
+ * @summary Sign in with an issued customer access token
+ */
+export const tokenLoginBodyTokenMin = 16;
+export const tokenLoginBodyTokenMax = 128;
+
+
+
+export const TokenLoginBody = zod.object({
+  "token": zod.string().min(tokenLoginBodyTokenMin).max(tokenLoginBodyTokenMax)
+})
+
+export const TokenLoginResponse = zod.object({
+  "authenticated": zod.boolean(),
+  "user": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'restricted', 'deleted']),
+  "slipLimit": zod.number(),
+  "slipsUsed": zod.number(),
+  "designLimit": zod.number(),
+  "designsUsed": zod.number(),
+  "pdfPrintCount": zod.number(),
+  "browserPrintCount": zod.number(),
+  "lockoutUntil": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary End the customer session
+ */
+export const TokenLogoutResponse = zod.void()
+
+
+/**
+ * @summary Get the current customer session
+ */
+export const GetUserSessionResponse = zod.object({
+  "authenticated": zod.boolean(),
+  "user": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'restricted', 'deleted']),
+  "slipLimit": zod.number(),
+  "slipsUsed": zod.number(),
+  "designLimit": zod.number(),
+  "designsUsed": zod.number(),
+  "pdfPrintCount": zod.number(),
+  "browserPrintCount": zod.number(),
+  "lockoutUntil": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Soft-delete the current customer account
+ */
+export const DeleteUserAccountResponse = zod.void()
+
+
+/**
+ * @summary List saved payee profiles
+ */
+export const listPayeesResponseOneNameMax = 100;
+
+export const listPayeesResponseOneAddressMax = 200;
+
+export const listPayeesResponseOneBankNameMax = 100;
+
+export const listPayeesResponseOneBankAddressMax = 200;
+
+export const listPayeesResponseOneRoutingNumberRegExp = new RegExp('^[0-9]{9}$');
+export const listPayeesResponseOneAccountNumberMax = 30;
+
+export const listPayeesResponseOneBankLogoUrlMax = 500;
+
+
+
+export const ListPayeesResponseItem = zod.object({
+  "name": zod.string().min(1).max(listPayeesResponseOneNameMax),
+  "address": zod.string().max(listPayeesResponseOneAddressMax),
+  "bankName": zod.string().max(listPayeesResponseOneBankNameMax),
+  "bankAddress": zod.string().max(listPayeesResponseOneBankAddressMax),
+  "routingNumber": zod.string().regex(listPayeesResponseOneRoutingNumberRegExp),
+  "accountNumber": zod.string().max(listPayeesResponseOneAccountNumberMax),
+  "bankLogoUrl": zod.string().max(listPayeesResponseOneBankLogoUrlMax).nullable()
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.string()
+}))
+export const ListPayeesResponse = zod.array(ListPayeesResponseItem)
+
+
+/**
+ * @summary Save a payee profile
+ */
+export const createPayeeBodyNameMax = 100;
+
+export const createPayeeBodyAddressMax = 200;
+
+export const createPayeeBodyBankNameMax = 100;
+
+export const createPayeeBodyBankAddressMax = 200;
+
+export const createPayeeBodyRoutingNumberRegExp = new RegExp('^[0-9]{9}$');
+export const createPayeeBodyAccountNumberMax = 30;
+
+export const createPayeeBodyBankLogoUrlMax = 500;
+
+
+
+export const CreatePayeeBody = zod.object({
+  "name": zod.string().min(1).max(createPayeeBodyNameMax),
+  "address": zod.string().max(createPayeeBodyAddressMax),
+  "bankName": zod.string().max(createPayeeBodyBankNameMax),
+  "bankAddress": zod.string().max(createPayeeBodyBankAddressMax),
+  "routingNumber": zod.string().regex(createPayeeBodyRoutingNumberRegExp),
+  "accountNumber": zod.string().max(createPayeeBodyAccountNumberMax),
+  "bankLogoUrl": zod.string().max(createPayeeBodyBankLogoUrlMax).nullable()
+})
+
+export const createPayeeResponseOneNameMax = 100;
+
+export const createPayeeResponseOneAddressMax = 200;
+
+export const createPayeeResponseOneBankNameMax = 100;
+
+export const createPayeeResponseOneBankAddressMax = 200;
+
+export const createPayeeResponseOneRoutingNumberRegExp = new RegExp('^[0-9]{9}$');
+export const createPayeeResponseOneAccountNumberMax = 30;
+
+export const createPayeeResponseOneBankLogoUrlMax = 500;
+
+
+
+export const CreatePayeeResponse = zod.object({
+  "name": zod.string().min(1).max(createPayeeResponseOneNameMax),
+  "address": zod.string().max(createPayeeResponseOneAddressMax),
+  "bankName": zod.string().max(createPayeeResponseOneBankNameMax),
+  "bankAddress": zod.string().max(createPayeeResponseOneBankAddressMax),
+  "routingNumber": zod.string().regex(createPayeeResponseOneRoutingNumberRegExp),
+  "accountNumber": zod.string().max(createPayeeResponseOneAccountNumberMax),
+  "bankLogoUrl": zod.string().max(createPayeeResponseOneBankLogoUrlMax).nullable()
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.string()
+}))
+
+
+/**
+ * @summary Delete a saved payee profile
+ */
+export const DeletePayeeParams = zod.object({
+  "payeeId": zod.coerce.string()
+})
+
+export const DeletePayeeResponse = zod.void()
+
+
+/**
+ * @summary List available plans
+ */
+export const ListPlansResponseItem = zod.object({
+  "id": zod.enum(['starter', 'pro', 'enterprise']),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "currency": zod.string(),
+  "slipLimit": zod.number(),
+  "designLimit": zod.number(),
+  "billing": zod.enum(['one_time', 'monthly']),
+  "description": zod.string()
+})
+export const ListPlansResponse = zod.array(ListPlansResponseItem)
+
+
+/**
+ * @summary Create a manual-payment order
+ */
+export const createOrderBodyNameMax = 120;
+
+
+
+export const CreateOrderBody = zod.object({
+  "planId": zod.enum(['starter', 'pro', 'enterprise']),
+  "name": zod.string().min(1).max(createOrderBodyNameMax),
+  "email": zod.string(),
+  "paymentMethod": zod.enum(['card_manual', 'bitcoin']),
+  "acceptedPaymentTerms": zod.boolean()
+})
+
+export const CreateOrderResponse = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "planId": zod.enum(['starter', 'pro', 'enterprise']),
+  "name": zod.string(),
+  "email": zod.string(),
+  "paymentMethod": zod.enum(['card_manual', 'bitcoin']),
+  "status": zod.enum(['pending', 'successful', 'failed']),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "acceptedPaymentTerms": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Track an order by order number and email
+ */
+export const lookupOrderBodyOrderNumberMin = 6;
+export const lookupOrderBodyOrderNumberMax = 40;
+
+
+
+export const LookupOrderBody = zod.object({
+  "orderNumber": zod.string().min(lookupOrderBodyOrderNumberMin).max(lookupOrderBodyOrderNumberMax),
+  "email": zod.string()
+})
+
+export const LookupOrderResponse = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "planId": zod.enum(['starter', 'pro', 'enterprise']),
+  "name": zod.string(),
+  "email": zod.string(),
+  "paymentMethod": zod.enum(['card_manual', 'bitcoin']),
+  "status": zod.enum(['pending', 'successful', 'failed']),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "acceptedPaymentTerms": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Record a PDF or browser print usage event
+ */
+export const RecordDocumentUsageBody = zod.object({
+  "kind": zod.enum(['pdf', 'browser_print'])
+})
+
+export const RecordDocumentUsageResponse = zod.object({
+  "kind": zod.enum(['pdf', 'browser_print']),
+  "slipsUsed": zod.number(),
+  "slipLimit": zod.number(),
+  "remaining": zod.number()
+})
+
+
+/**
+ * @summary Get admin dashboard totals
+ */
+export const GetAdminOverviewResponse = zod.object({
+  "totalUsers": zod.number(),
+  "activeUsers": zod.number(),
+  "restrictedUsers": zod.number(),
+  "totalPdfPrints": zod.number(),
+  "totalBrowserPrints": zod.number(),
+  "pendingOrders": zod.number(),
+  "successfulOrders": zod.number(),
+  "failedOrders": zod.number()
+})
+
+
+/**
+ * @summary List customer token accounts and usage
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'restricted', 'deleted']),
+  "slipLimit": zod.number(),
+  "slipsUsed": zod.number(),
+  "designLimit": zod.number(),
+  "designsUsed": zod.number(),
+  "pdfPrintCount": zod.number(),
+  "browserPrintCount": zod.number(),
+  "lockoutUntil": zod.string().nullable(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "tokenId": zod.string(),
+  "tokenStatus": zod.enum(['active', 'revoked'])
+}))
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
+
+
+/**
+ * @summary Issue a customer token
+ */
+export const createAdminTokenBodyNameMax = 120;
+
+
+
+export const CreateAdminTokenBody = zod.object({
+  "name": zod.string().min(1).max(createAdminTokenBodyNameMax),
+  "email": zod.string(),
+  "planId": zod.enum(['starter', 'pro', 'enterprise'])
+})
+
+export const CreateAdminTokenResponse = zod.object({
+  "tokenId": zod.string(),
+  "token": zod.string(),
+  "user": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'restricted', 'deleted']),
+  "slipLimit": zod.number(),
+  "slipsUsed": zod.number(),
+  "designLimit": zod.number(),
+  "designsUsed": zod.number(),
+  "pdfPrintCount": zod.number(),
+  "browserPrintCount": zod.number(),
+  "lockoutUntil": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Reveal a token through an audited encrypted recovery action
+ */
+export const RevealAdminTokenParams = zod.object({
+  "tokenId": zod.coerce.string()
+})
+
+export const RevealAdminTokenResponse = zod.object({
+  "tokenId": zod.string(),
+  "token": zod.string(),
+  "user": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'restricted', 'deleted']),
+  "slipLimit": zod.number(),
+  "slipsUsed": zod.number(),
+  "designLimit": zod.number(),
+  "designsUsed": zod.number(),
+  "pdfPrintCount": zod.number(),
+  "browserPrintCount": zod.number(),
+  "lockoutUntil": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Revoke a customer token
+ */
+export const RevokeAdminTokenParams = zod.object({
+  "tokenId": zod.coerce.string()
+})
+
+export const RevokeAdminTokenResponse = zod.void()
+
+
+/**
+ * @summary Restrict or restore a customer account
+ */
+export const UpdateAdminUserStatusParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UpdateAdminUserStatusBody = zod.object({
+  "status": zod.enum(['active', 'restricted', 'deleted'])
+})
+
+export const UpdateAdminUserStatusResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'restricted', 'deleted']),
+  "slipLimit": zod.number(),
+  "slipsUsed": zod.number(),
+  "designLimit": zod.number(),
+  "designsUsed": zod.number(),
+  "pdfPrintCount": zod.number(),
+  "browserPrintCount": zod.number(),
+  "lockoutUntil": zod.string().nullable(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "tokenId": zod.string(),
+  "tokenStatus": zod.enum(['active', 'revoked'])
+}))
+
+
+/**
+ * @summary List orders for manual payment review
+ */
+export const ListAdminOrdersResponseItem = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "planId": zod.enum(['starter', 'pro', 'enterprise']),
+  "name": zod.string(),
+  "email": zod.string(),
+  "paymentMethod": zod.enum(['card_manual', 'bitcoin']),
+  "status": zod.enum(['pending', 'successful', 'failed']),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "acceptedPaymentTerms": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAdminOrdersResponse = zod.array(ListAdminOrdersResponseItem)
+
+
+/**
+ * @summary Mark an order pending, successful, or failed
+ */
+export const UpdateAdminOrderStatusParams = zod.object({
+  "orderId": zod.coerce.string()
+})
+
+export const UpdateAdminOrderStatusBody = zod.object({
+  "status": zod.enum(['pending', 'successful', 'failed'])
+})
+
+export const UpdateAdminOrderStatusResponse = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "planId": zod.enum(['starter', 'pro', 'enterprise']),
+  "name": zod.string(),
+  "email": zod.string(),
+  "paymentMethod": zod.enum(['card_manual', 'bitcoin']),
+  "status": zod.enum(['pending', 'successful', 'failed']),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "acceptedPaymentTerms": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get BTC payment configuration
+ */
+export const GetAdminPaymentSettingsResponse = zod.object({
+  "bitcoinWallet": zod.string(),
+  "bitcoinQrUrl": zod.string().nullable(),
+  "bitcoinInstructions": zod.string()
+})
+
+
+/**
+ * @summary Update BTC payment configuration
+ */
+export const UpdateAdminPaymentSettingsBody = zod.object({
+  "bitcoinWallet": zod.string(),
+  "bitcoinQrUrl": zod.string().nullable(),
+  "bitcoinInstructions": zod.string()
+})
+
+export const UpdateAdminPaymentSettingsResponse = zod.object({
+  "bitcoinWallet": zod.string(),
+  "bitcoinQrUrl": zod.string().nullable(),
+  "bitcoinInstructions": zod.string()
+})
+
+

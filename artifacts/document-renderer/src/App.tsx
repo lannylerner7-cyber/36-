@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type KeyboardEvent, type ReactNode, type SetStateAction } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import micrFontData from './assets/GnuMICR.ttf?inline';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -8,32 +8,77 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import {
   getGetIntegrationStatusQueryKey,
+  getGetAdminOverviewQueryKey,
+  getGetAdminPaymentSettingsQueryKey,
+  getGetAdminSessionQueryKey,
+  getGetUserSessionQueryKey,
+  getListAdminOrdersQueryKey,
+  getListAdminUsersQueryKey,
+  getListPayeesQueryKey,
+  getListPlansQueryKey,
   getHealthCheckQueryKey,
   useAutocompletePlace,
+  useAdminLogin,
+  useAdminLogout,
+  useCreateAdminToken,
+  useCreateOrder,
+  useCreatePayee,
+  useDeletePayee,
+  useDeleteUserAccount,
+  useGetAdminOverview,
+  useGetAdminPaymentSettings,
+  useGetAdminSession,
   useGetIntegrationStatus,
+  useGetUserSession,
+  useListAdminOrders,
+  useListAdminUsers,
+  useListPayees,
+  useListPlans,
   useHealthCheck,
   useLookupRoutingNumber,
+  useLookupOrder,
+  useRecordDocumentUsage,
+  useRevealAdminToken,
+  useRevokeAdminToken,
   useRemoveBackground,
   useRenderSamplePdf,
+  useTokenLogin,
+  useTokenLogout,
+  useUpdateAdminOrderStatus,
+  useUpdateAdminPaymentSettings,
+  useUpdateAdminUserStatus,
   type RoutingLookupResponse,
   type SampleDocumentInput,
+  type AdminUser,
+  type Order,
+  type PaymentSettings,
 } from '@workspace/api-client-react';
 import {
   AlertCircle,
   ArrowRight,
+  BarChart3,
+  Bitcoin,
   Check,
   CheckCircle2,
   ClipboardCheck,
+  Copy,
+  CreditCard,
+  Eye,
+  EyeOff,
   FileDown,
   Info,
   Landmark,
   Loader2,
+  LogOut,
   MapPin,
+  PackageSearch,
   Printer,
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Upload,
+  Users,
 } from 'lucide-react';
 import {
   Route,
@@ -121,6 +166,209 @@ function removeLogoBackgroundLocally(dataUrl: string): Promise<string> {
     image.onerror = () => reject(new Error('Could not read the logo image.'));
     image.src = dataUrl;
   });
+}
+
+function BrandBar({ admin = false, onLogout }: { admin?: boolean; onLogout?: () => void }) {
+  return (
+    <header className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4 px-5 py-4 lg:px-8">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-sidebar-primary/15 text-sidebar-primary ring-1 ring-sidebar-primary/30"><DepSlipMark compact /></div>
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[.24em] text-sidebar-foreground/55">{admin ? 'Operator console' : 'Document preparation'}</p>
+            <h1 className="mt-0.5 text-[20px] font-semibold tracking-[-.04em]" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>DepSlip</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/60 sm:inline">{admin ? 'Restricted surface' : 'Authorized workspace'}</span>
+          {onLogout && <button type="button" onClick={onLogout} className="flex items-center gap-2 rounded-md border border-sidebar-border px-3 py-2 text-xs font-semibold transition hover:bg-sidebar-foreground/10" data-testid={admin ? 'button-admin-logout' : 'button-customer-logout'}><LogOut size={14} /> Sign out</button>}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function CustomerHome() {
+  const session = useGetUserSession({ query: { queryKey: getGetUserSessionQueryKey(), retry: false } });
+  const tokenLogin = useTokenLogin();
+  const tokenLogout = useTokenLogout();
+  const lookupOrder = useLookupOrder();
+  const [token, setToken] = useState('');
+  const [active, setActive] = useState<'welcome' | 'orders' | 'payees'>('welcome');
+  const [message, setMessage] = useState('');
+  const [lookup, setLookup] = useState({ orderNumber: '', email: '' });
+  const [lookupResult, setLookupResult] = useState<Order | null>(null);
+  if (session.isLoading) {
+    return <main className="min-h-[100dvh] bg-background"><BrandBar /><div className="mx-auto max-w-xl px-5 py-24"><div className="h-3 w-32 animate-pulse rounded bg-muted" /><div className="mt-5 h-12 w-3/4 animate-pulse rounded bg-muted" /><div className="mt-4 h-4 w-full animate-pulse rounded bg-muted" /><div className="mt-2 h-4 w-5/6 animate-pulse rounded bg-muted" /></div></main>;
+  }
+
+  const login = (event: FormEvent) => {
+    event.preventDefault();
+    setMessage('');
+    tokenLogin.mutate({ data: { token: token.trim() } }, {
+      onSuccess: () => {
+        setMessage('Access confirmed. Your preparation desk is ready.');
+        session.refetch();
+      },
+      onError: () => setMessage('That access token could not be verified. Check the characters and try again.'),
+    });
+  };
+
+  const findOrder = (event: FormEvent) => {
+    event.preventDefault();
+    setLookupResult(null);
+    lookupOrder.mutate({ data: lookup }, { onSuccess: (order) => setLookupResult(order), onError: () => setMessage('We could not find an order with those details.') });
+  };
+
+  if (session.data?.authenticated) {
+    return <CustomerDesk user={session.data.user} active={active} setActive={setActive} onLogout={() => tokenLogout.mutate(undefined, { onSuccess: () => session.refetch() })} />;
+  }
+
+  return (
+    <main className="min-h-[100dvh] bg-background">
+      <BrandBar />
+      <section className="relative overflow-hidden border-b border-border bg-[hsl(211_34%_19%)] text-sidebar-foreground">
+        <div className="absolute -right-24 -top-32 h-96 w-96 rounded-full border-[40px] border-sidebar-primary/10" />
+        <div className="absolute bottom-[-12rem] left-[48%] h-96 w-96 rounded-full border border-sidebar-primary/20" />
+        <div className="relative mx-auto grid max-w-[1480px] gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_420px] lg:px-16 lg:py-24">
+          <div className="max-w-3xl animate-rise-in">
+            <div className="mb-6 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.22em] text-sidebar-primary"><span className="h-px w-7 bg-sidebar-primary" /> Issued access only</div>
+            <h2 className="max-w-3xl text-5xl font-semibold leading-[.98] tracking-[-.06em] sm:text-7xl">Make the paper<br /><span className="text-sidebar-primary">match the intent.</span></h2>
+            <p className="mt-7 max-w-xl text-base leading-7 text-sidebar-foreground/65">DepSlip is the quiet, exacting desk for preparing authorized deposit slips. Bring your issued token, then work from a live paper preview that stays honest to the final print.</p>
+            <div className="mt-10 flex flex-wrap gap-3 text-[11px] font-mono uppercase tracking-[.12em] text-sidebar-foreground/65">
+              <span className="rounded-full border border-sidebar-border px-3 py-2">Print-first</span><span className="rounded-full border border-sidebar-border px-3 py-2">Token protected</span><span className="rounded-full border border-sidebar-border px-3 py-2">MICR aware</span>
+            </div>
+          </div>
+          <form onSubmit={login} className="rounded-2xl border border-sidebar-foreground/15 bg-sidebar-foreground/[.06] p-6 shadow-2xl backdrop-blur-sm sm:p-7" data-testid="form-token-login">
+            <div className="mb-7 flex items-start justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[.18em] text-sidebar-primary">01 / Access desk</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.035em]">Enter your issued token</h3></div><ShieldCheck className="text-sidebar-primary" size={21} /></div>
+            <label className="block"><span className="mb-2 block text-[11px] font-semibold text-sidebar-foreground/60">Access token</span><input autoComplete="one-time-code" value={token} onChange={(event) => setToken(event.target.value)} placeholder="Paste the token from your issue notice" className="h-12 w-full rounded-lg border border-sidebar-foreground/15 bg-sidebar/60 px-3 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/35 focus:border-sidebar-primary focus:outline-none" data-testid="input-customer-token" /></label>
+            <button type="submit" disabled={tokenLogin.isPending || token.trim().length < 16} className="mt-4 flex h-12 w-full items-center justify-between rounded-lg bg-sidebar-primary px-4 text-sm font-bold text-sidebar-primary-foreground transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-45" data-testid="button-token-login"><span>{tokenLogin.isPending ? 'Verifying access…' : 'Open preparation desk'}</span>{tokenLogin.isPending ? <Loader2 className="animate-spin" size={16} /> : <ArrowRight size={17} />}</button>
+            {message && <p className="mt-4 flex gap-2 text-xs leading-5 text-sidebar-primary" data-testid="status-token-login"><CheckCircle2 size={15} className="mt-0.5 shrink-0" />{message}</p>}
+            <p className="mt-6 border-t border-sidebar-foreground/10 pt-4 text-[11px] leading-5 text-sidebar-foreground/45">Tokens are issued by the DepSlip operator. There is no public account registration and no reusable password.</p>
+          </form>
+        </div>
+      </section>
+      <section className="mx-auto grid max-w-[1480px] gap-5 px-5 py-12 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:px-16 lg:py-16">
+        <div className="rounded-2xl border border-border bg-card p-7 sm:p-9">
+          <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">02 / Order tracking</p>
+          <h3 className="mt-3 text-3xl font-semibold tracking-[-.05em]">Already requested access?</h3>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">Look up a manual payment request using the order number and the email used at checkout.</p>
+          <form onSubmit={findOrder} className="mt-7 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+            <input autoComplete="off" value={lookup.orderNumber} onChange={(event) => setLookup({ ...lookup, orderNumber: event.target.value })} placeholder="Order number" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" data-testid="input-order-number" />
+            <input autoComplete="email" type="email" value={lookup.email} onChange={(event) => setLookup({ ...lookup, email: event.target.value })} placeholder="Email address" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" data-testid="input-order-email" />
+            <button type="submit" className="h-11 rounded-lg bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:bg-primary/90" data-testid="button-lookup-order">Find order</button>
+          </form>
+          {lookupResult && <div className="mt-5 flex items-center justify-between rounded-lg bg-secondary px-4 py-3 text-sm" data-testid="status-order-lookup"><span className="font-semibold">{lookupResult.orderNumber} · {lookupResult.planId}</span><span className="font-mono text-[10px] uppercase tracking-wider">{lookupResult.status}</span></div>}
+          {message && !session.data?.authenticated && <p className="mt-4 text-xs text-destructive" data-testid="status-order-error">{message}</p>}
+        </div>
+        <div className="rounded-2xl border border-border bg-[hsl(175_18%_86%)] p-7 sm:p-9">
+          <p className="font-mono text-[10px] uppercase tracking-[.2em] text-secondary-foreground">A careful boundary</p>
+          <h3 className="mt-3 text-2xl font-semibold tracking-[-.04em]">No card details collected here.</h3>
+          <p className="mt-3 text-sm leading-6 text-secondary-foreground/75">Card orders are terminal/manual payment requests. Bitcoin instructions, when configured, are shared by the operator after your request.</p>
+          <div className="mt-7 flex items-center gap-3 border-t border-secondary-foreground/15 pt-5 text-xs font-semibold text-secondary-foreground"><ShieldCheck size={17} /> Authorized workflows only</div>
+        </div>
+      </section>
+      <footer className="border-t border-border px-5 py-8 text-center font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">DepSlip · document preparation with a paper conscience</footer>
+    </main>
+  );
+}
+
+function CustomerDesk({ user, active, setActive, onLogout }: { user: { name: string; email: string; slipsUsed: number; slipLimit: number; status: string }; active: 'welcome' | 'orders' | 'payees'; setActive: (value: 'welcome' | 'orders' | 'payees') => void; onLogout: () => void }) {
+  const plans = useListPlans({ query: { queryKey: getListPlansQueryKey() } });
+  const payees = useListPayees({ query: { queryKey: getListPayeesQueryKey() } });
+  const queryClient = useQueryClient();
+  const createPayee = useCreatePayee();
+  const deletePayee = useDeletePayee();
+  const createOrder = useCreateOrder();
+  const recordUsage = useRecordDocumentUsage();
+  const deleteAccount = useDeleteUserAccount();
+  const [order, setOrder] = useState({ planId: 'starter', paymentMethod: 'card_manual' as 'card_manual' | 'bitcoin', acceptedPaymentTerms: false });
+  const [newPayee, setNewPayee] = useState({ name: '', address: '', bankName: '', bankAddress: '', routingNumber: '', accountNumber: '', bankLogoUrl: null as string | null });
+  const [notice, setNotice] = useState('');
+  const currentPlan = plans.data?.find((plan) => plan.id === order.planId);
+
+  const refreshPayees = () => queryClient.invalidateQueries({ queryKey: getListPayeesQueryKey() });
+  return (
+    <main className="min-h-[100dvh] bg-background">
+      <BrandBar onLogout={onLogout} />
+      <div className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-12">
+        <div className="mb-8 flex flex-col justify-between gap-5 border-b border-border pb-7 sm:flex-row sm:items-end">
+          <div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">Customer desk / {user.status}</p><h2 className="mt-2 text-4xl font-semibold tracking-[-.06em]">Good to see you, {user.name.split(' ')[0]}<span className="text-accent">.</span></h2><p className="mt-2 text-sm text-muted-foreground">{user.email} · {Math.max(user.slipLimit - user.slipsUsed, 0)} prepared slips remaining</p></div>
+          <div className="flex gap-2 rounded-lg border border-border bg-card p-1"><button type="button" onClick={() => setActive('welcome')} className={`rounded-md px-3 py-2 text-xs font-bold ${active === 'welcome' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} data-testid="tab-workspace">Workspace</button><button type="button" onClick={() => setActive('orders')} className={`rounded-md px-3 py-2 text-xs font-bold ${active === 'orders' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} data-testid="tab-orders">Plans & orders</button><button type="button" onClick={() => setActive('payees')} className={`rounded-md px-3 py-2 text-xs font-bold ${active === 'payees' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} data-testid="tab-payees">Saved payees</button></div>
+        </div>
+        {active === 'welcome' && <div className="mb-7 grid gap-4 sm:grid-cols-3"><div className="rounded-xl border border-border bg-card p-5"><p className="font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">Slip allowance</p><p className="mt-3 text-3xl font-semibold tracking-[-.05em]">{user.slipsUsed}<span className="text-base text-muted-foreground"> / {user.slipLimit}</span></p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min((user.slipsUsed / Math.max(user.slipLimit, 1)) * 100, 100)}%` }} /></div></div><div className="rounded-xl border border-border bg-card p-5"><p className="font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">Saved payees</p><p className="mt-3 text-3xl font-semibold tracking-[-.05em]">{payees.isLoading ? '—' : payees.data?.length ?? 0}</p><button type="button" onClick={() => setActive('payees')} className="mt-3 text-xs font-bold text-accent hover:underline" data-testid="button-manage-payees">Manage payees <ArrowRight className="ml-1 inline" size={13} /></button></div><div className="rounded-xl border border-accent/25 bg-accent/10 p-5"><p className="font-mono text-[10px] uppercase tracking-[.15em] text-accent">Print boundary</p><p className="mt-3 text-sm font-semibold leading-5">Every action stays tied to this issued access.</p><button type="button" onClick={() => recordUsage.mutate({ data: { kind: 'browser_print' } }, { onSuccess: () => setNotice('Browser print recorded for this workspace.') })} className="mt-3 text-xs font-bold text-accent hover:underline" data-testid="button-record-browser-print">{recordUsage.isPending ? 'Recording…' : 'Record browser print'}</button></div></div>}
+         {active === 'welcome' && <Home />}
+         {active === 'welcome' && <section className="mt-7 rounded-2xl border border-destructive/20 bg-destructive/[.04] p-6 sm:p-8"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-destructive">Account boundary</p><div className="mt-2 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><h3 className="text-xl font-semibold tracking-[-.04em]">Deactivate this workspace</h3><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Your access token will be revoked and this account will be marked deleted. Existing payment and audit records are retained for compliance.</p></div><button type="button" onClick={() => { if (window.confirm('Deactivate this workspace? Your token will stop working immediately.')) deleteAccount.mutate(undefined, { onSuccess: onLogout, onError: () => setNotice('The account could not be deactivated. Please try again.') }); }} disabled={deleteAccount.isPending} className="shrink-0 rounded-lg border border-destructive/30 px-4 py-3 text-sm font-bold text-destructive transition hover:bg-destructive/10 disabled:opacity-50" data-testid="button-delete-account">{deleteAccount.isPending ? 'Deactivating…' : 'Deactivate account'}</button></div>{notice && <p className="mt-3 text-xs font-semibold text-destructive" data-testid="status-account-action">{notice}</p>}</section>}
+        {active === 'orders' && <section className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+          <div className="rounded-2xl border border-border bg-card p-6 sm:p-8"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">Request access capacity</p><h3 className="mt-2 text-3xl font-semibold tracking-[-.05em]">Choose a plan</h3><div className="mt-6 grid gap-3">{plans.isLoading ? [1, 2, 3].map((item) => <div key={item} className="h-24 animate-pulse rounded-xl bg-muted" />) : plans.data?.map((plan) => <button type="button" key={plan.id} onClick={() => setOrder({ ...order, planId: plan.id })} className={`flex items-center justify-between rounded-xl border p-4 text-left transition ${order.planId === plan.id ? 'border-accent bg-accent/10' : 'border-border hover:border-accent/50'}`} data-testid={`card-plan-${plan.id}`}><span><span className="block font-semibold">{plan.name}</span><span className="mt-1 block text-xs text-muted-foreground">{plan.description} · {plan.slipLimit} slips</span></span><span className="font-mono text-sm font-semibold">${(plan.priceCents / 100).toFixed(2)}</span></button>)}</div></div>
+          <div className="rounded-2xl border border-border bg-[hsl(175_18%_86%)] p-6 sm:p-8"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-secondary-foreground">Payment request</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.04em]">{currentPlan?.name ?? 'Selected plan'}</h3><p className="mt-2 text-sm leading-6 text-secondary-foreground/75">Select how the operator should confirm your order. Card means a terminal/manual payment request; no card credentials are entered here.</p><div className="mt-6 grid gap-2"><button type="button" onClick={() => setOrder({ ...order, paymentMethod: 'card_manual' })} className={`flex items-center gap-3 rounded-lg border p-3 text-left text-sm font-semibold ${order.paymentMethod === 'card_manual' ? 'border-primary bg-card' : 'border-secondary-foreground/20'}`} data-testid="button-payment-card"><CreditCard size={17} /> Terminal / manual card request</button><button type="button" onClick={() => setOrder({ ...order, paymentMethod: 'bitcoin' })} className={`flex items-center gap-3 rounded-lg border p-3 text-left text-sm font-semibold ${order.paymentMethod === 'bitcoin' ? 'border-primary bg-card' : 'border-secondary-foreground/20'}`} data-testid="button-payment-bitcoin"><Bitcoin size={17} /> Bitcoin request</button></div><label className="mt-5 flex gap-2 text-xs leading-5 text-secondary-foreground"><input type="checkbox" checked={order.acceptedPaymentTerms} onChange={(event) => setOrder({ ...order, acceptedPaymentTerms: event.target.checked })} data-testid="input-accept-terms" /> I understand this creates a payment request for operator review.</label><button type="button" disabled={!order.acceptedPaymentTerms || createOrder.isPending || !currentPlan} onClick={() => createOrder.mutate({ data: { ...order, name: user.name, email: user.email, planId: order.planId as 'starter' | 'pro' | 'enterprise' } }, { onSuccess: (result) => setNotice(`Request ${result.orderNumber} is now ${result.status}.`), onError: () => setNotice('The payment request could not be created.') })} className="mt-6 flex h-12 w-full items-center justify-between rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-45" data-testid="button-create-order"><span>{createOrder.isPending ? 'Submitting request…' : 'Submit payment request'}</span>{createOrder.isPending ? <Loader2 className="animate-spin" size={16} /> : <ArrowRight size={16} />}</button>{notice && <p className="mt-4 text-xs font-semibold text-secondary-foreground" data-testid="status-customer-action">{notice}</p>}</div>
+        </section>}
+        {active === 'payees' && <section className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]"><div className="rounded-2xl border border-border bg-card p-6 sm:p-8"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">Reusable details</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.04em]">Save a payee</h3><p className="mt-2 text-xs leading-5 text-muted-foreground">Keep authorized recipient details close without changing the live document until you choose them.</p><div className="mt-5 space-y-2">{[['name','Name'],['address','Address'],['bankName','Bank name'],['bankAddress','Bank address'],['routingNumber','9-digit routing'],['accountNumber','Account number']].map(([key, label]) => <input key={key} value={newPayee[key as keyof typeof newPayee] as string} onChange={(event) => setNewPayee({ ...newPayee, [key]: event.target.value })} placeholder={label} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" data-testid={`input-payee-${key}`} />)}<button type="button" onClick={() => createPayee.mutate({ data: newPayee }, { onSuccess: () => { setNewPayee({ name: '', address: '', bankName: '', bankAddress: '', routingNumber: '', accountNumber: '', bankLogoUrl: null }); refreshPayees(); setNotice('Payee saved.'); }, onError: () => setNotice('Payee could not be saved. Check the routing number.') })} disabled={createPayee.isPending} className="mt-2 h-11 w-full rounded-lg bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50" data-testid="button-create-payee">{createPayee.isPending ? 'Saving…' : 'Save payee'}</button></div></div><div className="rounded-2xl border border-border bg-card p-6 sm:p-8"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">Your library</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.04em]">Saved payees</h3></div><span className="rounded-full bg-secondary px-3 py-1 font-mono text-[10px]">{payees.data?.length ?? 0} records</span></div>{payees.isLoading ? <div className="mt-6 space-y-3"><div className="h-16 animate-pulse rounded-lg bg-muted" /><div className="h-16 animate-pulse rounded-lg bg-muted" /></div> : payees.isError ? <p className="mt-6 text-sm text-destructive">Payees could not be loaded. Refresh the desk to try again.</p> : payees.data?.length ? <div className="mt-6 space-y-2">{payees.data.map((payee) => <div key={payee.id} className="flex items-center justify-between rounded-lg border border-border p-4" data-testid={`row-payee-${payee.id}`}><div><p className="text-sm font-semibold">{payee.name}</p><p className="mt-1 text-xs text-muted-foreground">{payee.bankName} · {payee.routingNumber}</p></div><button type="button" onClick={() => deletePayee.mutate({ payeeId: payee.id }, { onSuccess: refreshPayees })} className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${payee.name}`} data-testid={`button-delete-payee-${payee.id}`}><Trash2 size={15} /></button></div>)}</div> : <div className="mt-6 rounded-xl border border-dashed border-border p-8 text-center"><p className="text-sm font-semibold">No saved payees yet.</p><p className="mt-2 text-xs text-muted-foreground">The first one you save will appear here for future slips.</p></div>}</div></section>}
+      </div>
+    </main>
+  );
+}
+
+function AdminPage() {
+  const session = useGetAdminSession({ query: { queryKey: getGetAdminSessionQueryKey(), retry: false } });
+  const login = useAdminLogin();
+  const logout = useAdminLogout();
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  if (session.isLoading) return <main className="min-h-[100dvh] bg-[hsl(211_34%_19%)]"><BrandBar /><div className="mx-auto max-w-xl px-5 py-24"><div className="h-3 w-32 animate-pulse rounded bg-sidebar-foreground/10" /><div className="mt-5 h-12 w-3/4 animate-pulse rounded bg-sidebar-foreground/10" /></div></main>;
+  if (!session.data?.authenticated) return <AdminLogin credentials={credentials} setCredentials={setCredentials} login={login} onSuccess={() => session.refetch()} />;
+  return <AdminConsole onLogout={() => logout.mutate(undefined, { onSuccess: () => session.refetch() })} />;
+}
+
+function AdminLogin({ credentials, setCredentials, login, onSuccess }: { credentials: { username: string; password: string }; setCredentials: (value: { username: string; password: string }) => void; login: ReturnType<typeof useAdminLogin>; onSuccess: () => void }) {
+  const [error, setError] = useState('');
+  return <main className="min-h-[100dvh] bg-[hsl(211_34%_19%)] text-sidebar-foreground"><BrandBar /><div className="mx-auto flex max-w-[620px] flex-col items-center px-5 py-20 text-center"><div className="mb-8 rounded-2xl border border-sidebar-foreground/10 bg-sidebar-foreground/[.05] p-4 text-sidebar-primary"><ShieldCheck size={28} /></div><p className="font-mono text-[10px] uppercase tracking-[.22em] text-sidebar-primary">Operator access / restricted</p><h2 className="mt-3 text-5xl font-semibold tracking-[-.06em]">A clear view of the desk.</h2><p className="mt-4 max-w-md text-sm leading-6 text-sidebar-foreground/60">Manage issued access, payment requests, and the audit trail without touching customer credentials.</p><form onSubmit={(event) => { event.preventDefault(); setError(''); login.mutate({ data: credentials }, { onSuccess, onError: () => setError('Sign-in was not accepted. Check your operator credentials.') }); }} className="mt-10 w-full rounded-2xl border border-sidebar-foreground/10 bg-sidebar-foreground/[.05] p-6 text-left sm:p-8" data-testid="form-admin-login"><label className="block text-xs font-semibold text-sidebar-foreground/60">Username<input autoComplete="username" value={credentials.username} onChange={(event) => setCredentials({ ...credentials, username: event.target.value })} className="mt-2 h-12 w-full rounded-lg border border-sidebar-foreground/15 bg-sidebar/50 px-3 text-sm text-sidebar-foreground focus:border-sidebar-primary focus:outline-none" data-testid="input-admin-username" /></label><label className="mt-4 block text-xs font-semibold text-sidebar-foreground/60">Password<input autoComplete="current-password" type="password" value={credentials.password} onChange={(event) => setCredentials({ ...credentials, password: event.target.value })} className="mt-2 h-12 w-full rounded-lg border border-sidebar-foreground/15 bg-sidebar/50 px-3 text-sm text-sidebar-foreground focus:border-sidebar-primary focus:outline-none" data-testid="input-admin-password" /></label><button type="submit" disabled={login.isPending} className="mt-6 flex h-12 w-full items-center justify-between rounded-lg bg-sidebar-primary px-4 text-sm font-bold text-sidebar-primary-foreground disabled:opacity-50" data-testid="button-admin-login"><span>{login.isPending ? 'Authenticating…' : 'Enter operator console'}</span>{login.isPending ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}</button>{error && <p className="mt-4 text-xs text-red-300" data-testid="status-admin-login">{error}</p>}</form></div></main>;
+}
+
+function AdminConsole({ onLogout }: { onLogout: () => void }) {
+  const [tab, setTab] = useState<'overview' | 'users' | 'orders' | 'settings'>('overview');
+  const queryClient = useQueryClient();
+  const overview = useGetAdminOverview({ query: { queryKey: getGetAdminOverviewQueryKey() } });
+  const users = useListAdminUsers({ query: { queryKey: getListAdminUsersQueryKey() } });
+  const orders = useListAdminOrders({ query: { queryKey: getListAdminOrdersQueryKey() } });
+  const settings = useGetAdminPaymentSettings({ query: { queryKey: getGetAdminPaymentSettingsQueryKey() } });
+  const updateUser = useUpdateAdminUserStatus();
+  const reveal = useRevealAdminToken();
+  const revoke = useRevokeAdminToken();
+  const updateOrder = useUpdateAdminOrderStatus();
+  const createToken = useCreateAdminToken();
+  const saveSettings = useUpdateAdminPaymentSettings();
+  const [tokenForm, setTokenForm] = useState({ name: '', email: '', planId: 'starter' as 'starter' | 'pro' | 'enterprise' });
+  const [payment, setPayment] = useState<PaymentSettings>({ bitcoinWallet: '', bitcoinQrUrl: null, bitcoinInstructions: '' });
+  const [issued, setIssued] = useState('');
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
+  const [settingsReady, setSettingsReady] = useState(false);
+  const metric = useMemo(() => overview.data ? [{ label: 'Total users', value: overview.data.totalUsers, icon: <Users size={17} /> }, { label: 'Active users', value: overview.data.activeUsers, icon: <ShieldCheck size={17} /> }, { label: 'Pending orders', value: overview.data.pendingOrders, icon: <PackageSearch size={17} /> }, { label: 'Print records', value: overview.data.totalPdfPrints + overview.data.totalBrowserPrints, icon: <BarChart3 size={17} /> }] : [], [overview.data]);
+  useEffect(() => {
+    if (settings.data && !settingsReady) {
+      setPayment(settings.data);
+      setSettingsReady(true);
+    }
+  }, [settings.data, settingsReady]);
+  const refresh = () => { queryClient.invalidateQueries({ queryKey: getGetAdminOverviewQueryKey() }); queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() }); queryClient.invalidateQueries({ queryKey: getListAdminOrdersQueryKey() }); };
+  return <main className="min-h-[100dvh] bg-background"><BrandBar admin onLogout={onLogout} /><div className="mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-12"><div className="flex flex-col gap-6 border-b border-border pb-7 lg:flex-row lg:items-end lg:justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">Operator console / live ledger</p><h2 className="mt-2 text-4xl font-semibold tracking-[-.06em]">The desk, in full.</h2><p className="mt-2 text-sm text-muted-foreground">A calm record of access, capacity, payment, and print activity.</p></div><nav className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-1">{[['overview','Overview'],['users','Access tokens'],['orders','Orders'],['settings','Bitcoin settings']].map(([value,label]) => <button type="button" key={value} onClick={() => setTab(value as typeof tab)} className={`rounded-md px-3 py-2 text-xs font-bold ${tab === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} data-testid={`tab-admin-${value}`}>{label}</button>)}</nav></div>
+    {tab === 'overview' && <section className="animate-rise-in"><div className="grid gap-3 py-7 sm:grid-cols-2 lg:grid-cols-4">{overview.isLoading ? [1,2,3,4].map((item) => <div key={item} className="h-28 animate-pulse rounded-xl bg-muted" />) : metric.map((item) => <div key={item.label} className="rounded-xl border border-border bg-card p-5" data-testid={`metric-${item.label.toLowerCase().replaceAll(' ','-')}`}><div className="flex items-center justify-between text-accent"><span className="font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">{item.label}</span>{item.icon}</div><p className="mt-4 text-4xl font-semibold tracking-[-.06em]">{item.value}</p></div>)}</div><div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]"><div className="rounded-2xl border border-border bg-card p-6"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[.18em] text-accent">Order health</p><h3 className="mt-2 text-xl font-semibold">Payment requests at a glance</h3></div><button type="button" onClick={refresh} className="rounded-md p-2 text-muted-foreground hover:bg-muted" data-testid="button-refresh-admin"><RefreshCw size={15} /></button></div><div className="mt-6 grid grid-cols-3 gap-2 text-center">{[['Pending',overview.data?.pendingOrders ?? 0,'text-accent'],['Successful',overview.data?.successfulOrders ?? 0,'text-emerald-700'],['Failed',overview.data?.failedOrders ?? 0,'text-destructive']].map(([label,value,color]) => <div key={label} className="rounded-lg bg-muted/60 p-4"><p className={`text-2xl font-semibold ${color}`}>{value}</p><p className="mt-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p></div>)}</div></div><div className="rounded-2xl border border-accent/25 bg-accent/10 p-6"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-accent">Audit posture</p><h3 className="mt-2 text-xl font-semibold">Every state has a reason.</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">Tokens can be revealed or revoked, users can be restricted, and order status changes remain visible in the operator workflow.</p></div></div></section>}
+    {tab === 'users' && <AdminUsers users={users.data ?? []} tokenForm={tokenForm} setTokenForm={setTokenForm} createToken={createToken} issued={issued} setIssued={setIssued} revealed={revealed} reveal={reveal} setRevealed={setRevealed} revoke={revoke} updateUser={updateUser} onRefresh={refresh} />}
+    {tab === 'orders' && <AdminOrders orders={orders.data ?? []} updateOrder={updateOrder} onRefresh={refresh} />}
+    {tab === 'settings' && <AdminSettings payment={payment} setPayment={setPayment} saveSettings={saveSettings} />}
+  </div></main>;
+}
+
+function AdminUsers({ users, tokenForm, setTokenForm, createToken, issued, setIssued, revealed, setRevealed, reveal, revoke, updateUser, onRefresh }: { users: AdminUser[]; tokenForm: { name: string; email: string; planId: 'starter' | 'pro' | 'enterprise' }; setTokenForm: (value: { name: string; email: string; planId: 'starter' | 'pro' | 'enterprise' }) => void; createToken: ReturnType<typeof useCreateAdminToken>; issued: string; setIssued: (value: string) => void; revealed: Record<string, string>; setRevealed: Dispatch<SetStateAction<Record<string, string>>>; reveal: ReturnType<typeof useRevealAdminToken>; revoke: ReturnType<typeof useRevokeAdminToken>; updateUser: ReturnType<typeof useUpdateAdminUserStatus>; onRefresh: () => void }) {
+  return <section className="grid gap-6 py-7 lg:grid-cols-[360px_1fr]"><div className="rounded-2xl border border-border bg-card p-6"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-accent">Issue access</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.04em]">Create a customer token</h3><div className="mt-5 space-y-2"><input value={tokenForm.name} onChange={(event) => setTokenForm({ ...tokenForm, name: event.target.value })} placeholder="Customer name" className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" data-testid="input-new-user-name" /><input type="email" value={tokenForm.email} onChange={(event) => setTokenForm({ ...tokenForm, email: event.target.value })} placeholder="Email address" className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" data-testid="input-new-user-email" /><select value={tokenForm.planId} onChange={(event) => setTokenForm({ ...tokenForm, planId: event.target.value as typeof tokenForm.planId })} className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" data-testid="select-new-user-plan"><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select><button type="button" onClick={() => createToken.mutate({ data: tokenForm }, { onSuccess: (result) => { setIssued(result.token); onRefresh(); } })} disabled={createToken.isPending || !tokenForm.name || !tokenForm.email} className="mt-2 flex h-11 w-full items-center justify-between rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-45" data-testid="button-create-token"><span>{createToken.isPending ? 'Issuing…' : 'Issue token'}</span>{createToken.isPending ? <Loader2 className="animate-spin" size={15} /> : <ArrowRight size={15} />}</button></div>{issued && <div className="mt-5 rounded-lg border border-accent/30 bg-accent/10 p-4" data-testid="status-issued-token"><p className="font-mono text-[9px] uppercase tracking-wider text-accent">Reveal once / copy now</p><p className="mt-2 break-all font-mono text-xs">{issued}</p><button type="button" onClick={() => navigator.clipboard?.writeText(issued)} className="mt-3 flex items-center gap-2 text-xs font-bold text-accent" data-testid="button-copy-issued-token"><Copy size={14} /> Copy token</button></div>}</div><div className="rounded-2xl border border-border bg-card p-6"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[.18em] text-accent">Issued accounts</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.04em]">Access ledger</h3></div><span className="rounded-full bg-secondary px-3 py-1 font-mono text-[10px]">{users.length} users</span></div>{users.length ? <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead><tr className="border-b border-border font-mono text-[9px] uppercase tracking-wider text-muted-foreground"><th className="pb-3">Customer</th><th className="pb-3">Usage</th><th className="pb-3">Token</th><th className="pb-3">Status</th><th className="pb-3 text-right">Actions</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-border/70 last:border-0" data-testid={`row-admin-user-${user.id}`}><td className="py-4"><p className="font-semibold">{user.name}</p><p className="mt-1 text-xs text-muted-foreground">{user.email}</p></td><td className="py-4 font-mono text-xs">{user.slipsUsed} / {user.slipLimit}</td><td className="py-4">{revealed[user.tokenId] ? <span className="font-mono text-[10px]">{revealed[user.tokenId]}</span> : <button type="button" onClick={() => reveal.mutate({ tokenId: user.tokenId }, { onSuccess: (result) => setRevealed((current) => ({ ...current, [user.tokenId]: result.token })) })} className="flex items-center gap-1 text-xs font-bold text-accent" data-testid={`button-reveal-token-${user.tokenId}`}>{reveal.isPending ? <Loader2 size={13} className="animate-spin" /> : <Eye size={14} />} Reveal</button>}</td><td className="py-4"><span className={`rounded-full px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${user.status === 'active' ? 'bg-secondary text-secondary-foreground' : 'bg-destructive/10 text-destructive'}`}>{user.status}</span></td><td className="py-4 text-right"><div className="flex justify-end gap-2"><button type="button" onClick={() => updateUser.mutate({ userId: user.id, data: { status: user.status === 'active' ? 'restricted' : 'active' } }, { onSuccess: onRefresh })} className="rounded-md border border-border px-2 py-1.5 text-[10px] font-bold hover:bg-muted" data-testid={`button-toggle-user-${user.id}`}>{user.status === 'active' ? 'Restrict' : 'Activate'}</button>{user.tokenStatus === 'active' && <button type="button" onClick={() => revoke.mutate({ tokenId: user.tokenId }, { onSuccess: onRefresh })} className="rounded-md p-2 text-destructive hover:bg-destructive/10" aria-label="Revoke token" data-testid={`button-revoke-token-${user.tokenId}`}><EyeOff size={14} /></button>}</div></td></tr>)}</tbody></table></div> : <div className="mt-7 rounded-xl border border-dashed border-border p-12 text-center"><Users className="mx-auto text-muted-foreground" size={24} /><p className="mt-3 text-sm font-semibold">No issued users yet.</p><p className="mt-2 text-xs text-muted-foreground">A newly issued token will become the first row in this ledger.</p></div>}</div></section>;
+}
+
+function AdminOrders({ orders, updateOrder, onRefresh }: { orders: Order[]; updateOrder: ReturnType<typeof useUpdateAdminOrderStatus>; onRefresh: () => void }) {
+  return <section className="py-7"><div className="rounded-2xl border border-border bg-card p-6"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-accent">Payment requests</p><h3 className="mt-2 text-2xl font-semibold tracking-[-.04em]">Order ledger</h3>{orders.length ? <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b border-border font-mono text-[9px] uppercase tracking-wider text-muted-foreground"><th className="pb-3">Order</th><th className="pb-3">Customer</th><th className="pb-3">Method</th><th className="pb-3">Amount</th><th className="pb-3">Status</th><th className="pb-3 text-right">Update</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id} className="border-b border-border/70 last:border-0" data-testid={`row-admin-order-${order.id}`}><td className="py-4"><p className="font-mono text-xs font-semibold">{order.orderNumber}</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p></td><td className="py-4"><p className="font-semibold">{order.name}</p><p className="mt-1 text-xs text-muted-foreground">{order.email}</p></td><td className="py-4 text-xs">{order.paymentMethod === 'card_manual' ? 'Terminal / manual' : 'Bitcoin'}</td><td className="py-4 font-mono text-xs">${(order.amountCents / 100).toFixed(2)} {order.currency}</td><td className="py-4"><span className="rounded-full bg-muted px-2 py-1 font-mono text-[9px] uppercase tracking-wider">{order.status}</span></td><td className="py-4 text-right"><select value={order.status} onChange={(event) => updateOrder.mutate({ orderId: order.id, data: { status: event.target.value as 'pending' | 'successful' | 'failed' } }, { onSuccess: onRefresh })} className="h-8 rounded-md border border-input bg-background px-2 text-xs" data-testid={`select-order-status-${order.id}`}><option value="pending">Pending</option><option value="successful">Successful</option><option value="failed">Failed</option></select></td></tr>)}</tbody></table></div> : <div className="mt-7 rounded-xl border border-dashed border-border p-12 text-center"><PackageSearch className="mx-auto text-muted-foreground" size={24} /><p className="mt-3 text-sm font-semibold">No payment requests.</p><p className="mt-2 text-xs text-muted-foreground">Orders created from the customer desk will settle here.</p></div>}</div></section>;
+}
+
+function AdminSettings({ payment, setPayment, saveSettings }: { payment: PaymentSettings; setPayment: (value: PaymentSettings) => void; saveSettings: ReturnType<typeof useUpdateAdminPaymentSettings> }) {
+  const [notice, setNotice] = useState('');
+  return <section className="grid gap-6 py-7 lg:grid-cols-[1fr_360px]"><div className="rounded-2xl border border-border bg-card p-6 sm:p-8"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-accent">Bitcoin settlement</p><h3 className="mt-2 text-3xl font-semibold tracking-[-.05em]">What customers should see.</h3><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Keep wallet instructions explicit and reviewable. These settings are surfaced to operators while handling Bitcoin requests.</p><label className="mt-7 block text-xs font-bold text-muted-foreground">Wallet address<input value={payment.bitcoinWallet} onChange={(event) => setPayment({ ...payment, bitcoinWallet: event.target.value })} className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 font-mono text-sm" placeholder="Configured wallet address" data-testid="input-bitcoin-wallet" /></label><label className="mt-4 block text-xs font-bold text-muted-foreground">QR image URL <span className="font-normal">(optional)</span><input value={payment.bitcoinQrUrl ?? ''} onChange={(event) => setPayment({ ...payment, bitcoinQrUrl: event.target.value || null })} className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm" placeholder="https://…" data-testid="input-bitcoin-qr" /></label><label className="mt-4 block text-xs font-bold text-muted-foreground">Instructions<textarea value={payment.bitcoinInstructions} onChange={(event) => setPayment({ ...payment, bitcoinInstructions: event.target.value })} className="mt-2 min-h-32 w-full rounded-lg border border-input bg-background px-3 py-3 text-sm leading-6" placeholder="Tell the customer what to include with a payment request." data-testid="input-bitcoin-instructions" /></label><button type="button" onClick={() => saveSettings.mutate({ data: payment }, { onSuccess: () => setNotice('Bitcoin settings saved.'), onError: () => setNotice('Settings could not be saved.') })} disabled={saveSettings.isPending} className="mt-5 h-11 rounded-lg bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50" data-testid="button-save-payment-settings">{saveSettings.isPending ? 'Saving…' : 'Save settings'}</button>{notice && <p className="mt-3 text-xs font-semibold text-accent" data-testid="status-payment-settings">{notice}</p>}</div><div className="rounded-2xl border border-accent/25 bg-accent/10 p-6"><Bitcoin className="text-accent" size={22} /><h3 className="mt-4 text-xl font-semibold">Configuration check</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{payment.bitcoinWallet ? 'A wallet is configured. Review the address carefully before accepting a request.' : 'No wallet address is configured yet. Bitcoin requests should remain pending until one is supplied.'}</p>{payment.bitcoinQrUrl && <img src={payment.bitcoinQrUrl} alt="Configured Bitcoin payment QR" className="mt-6 aspect-square w-40 rounded-lg border border-border bg-card object-contain p-2" data-testid="img-bitcoin-qr" />}</div></section>;
 }
 
 function Home() {
@@ -497,7 +745,8 @@ function Router() {
     // survives a page crash.
     <RoutedErrorBoundary>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/" component={CustomerHome} />
+        <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
