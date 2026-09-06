@@ -2,6 +2,7 @@ import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import micrFontData from './assets/GnuMICR.ttf?inline';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { DepSlipMark } from '@/components/depslip-mark';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -237,34 +238,34 @@ function Home() {
     <main className="min-h-[100dvh] bg-background">
       <header className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-5 py-4 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-accent-foreground" data-testid="brand-mark">
-              <Landmark size={19} strokeWidth={2.3} />
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-sidebar-primary/15 text-sidebar-primary ring-1 ring-sidebar-primary/30" data-testid="brand-mark">
+              <DepSlipMark compact />
             </div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[.22em] text-sidebar-foreground/60">Operations / document lab</p>
-              <h1 className="text-[15px] font-bold tracking-tight">Deposit slip renderer</h1>
+              <p className="font-mono text-[9px] uppercase tracking-[.24em] text-sidebar-foreground/55">Document preparation</p>
+              <h1 className="mt-0.5 text-[20px] font-semibold tracking-[-.04em]" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>DepSlip</h1>
             </div>
           </div>
           <div className="hidden items-center gap-5 sm:flex">
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/70">
-              <span className={`h-2 w-2 rounded-full ${health.isError ? 'bg-red-400' : health.isLoading ? 'bg-amber-300 animate-pulse-line' : 'bg-emerald-400'}`} />
+              <span className={`h-2 w-2 rounded-full ${health.isError ? 'bg-red-400' : health.isLoading ? 'bg-amber-300 animate-pulse-line' : 'bg-sidebar-primary'}`} />
               {health.isLoading ? 'Checking boundary' : health.isError ? 'Boundary unavailable' : 'Boundary online'}
             </div>
             <div className="h-5 w-px bg-sidebar-border" />
-            <span className="font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/50">v0.4 / deposit-slip mode</span>
+            <span className="font-mono text-[10px] uppercase tracking-[.14em] text-sidebar-foreground/50">Local-first / v0.4</span>
           </div>
         </div>
       </header>
 
       <div className="mx-auto grid max-w-[1500px] grid-cols-1 lg:grid-cols-[minmax(440px,520px)_1fr]">
-        <section className="print-hide border-b border-border px-5 py-7 sm:px-8 lg:min-h-[calc(100dvh-73px)] lg:border-b-0 lg:border-r lg:px-10 lg:py-10">
+        <section className="print-hide border-b border-border/80 bg-background/65 px-5 py-7 sm:px-8 lg:min-h-[calc(100dvh-73px)] lg:border-b-0 lg:border-r lg:px-10 lg:py-10">
           <div className="mb-8 max-w-md animate-rise-in">
             <div className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.2em] text-accent">
               <span className="h-px w-5 bg-accent" /> Input sheet / 01
             </div>
-            <h2 className="text-3xl font-extrabold tracking-[-.045em] text-foreground sm:text-[36px]">Build a deposit slip.</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">Enter the details on the left. Your paper preview updates as you type and remains clearly marked for review.</p>
+            <h2 className="text-3xl font-extrabold tracking-[-.045em] text-foreground sm:text-[36px]">Build a deposit slip<span className="text-accent">.</span></h2>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">A careful workspace for getting the details right. Enter the source information; the paper preview keeps pace on the right.</p>
           </div>
 
           <div className="mb-7 grid grid-cols-2 gap-2">
@@ -352,13 +353,13 @@ function Home() {
           </form>
         </section>
 
-         <section className="paper-grid print-surface min-w-0 bg-[hsl(40_22%_91%)] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+          <section className="paper-grid print-surface min-w-0 bg-[hsl(198_24%_90%)] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
           <div className="mx-auto max-w-[960px]">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.2em] text-accent"><span className="h-px w-5 bg-accent" /> Output sheet / 02</div>
-                <h2 className="text-2xl font-extrabold tracking-[-.04em]">Physical preview</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Live representation · US letter placement · 8 × 4.5 in artifact</p>
+                 <h2 className="text-2xl font-extrabold tracking-[-.04em]">Physical preview</h2>
+                 <p className="mt-1 text-xs text-muted-foreground">Live representation · US letter placement · 8 × 4.5 in artifact</p>
               </div>
               <div className="rounded-md border border-border bg-card/80 px-3 py-2 text-right font-mono text-[10px] uppercase tracking-[.13em] text-muted-foreground">
                 <span className="block text-foreground">100% safe mode</span>
@@ -379,15 +380,18 @@ function Home() {
           </div>
         </section>
       </div>
-      <footer className="print-hide border-t border-border bg-card/45 px-5 py-6 sm:px-8 lg:px-10" data-testid="footer-policy">
+      <footer className="print-hide border-t border-border/80 bg-sidebar px-5 py-7 text-sidebar-foreground sm:px-8 lg:px-10" data-testid="footer-policy">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-4 text-[10px] leading-5 text-muted-foreground sm:flex-row sm:items-start sm:justify-between sm:gap-10">
-          <div className="shrink-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.2em] text-foreground">Deposit Slip Studio</p>
-            <p className="mt-1">Local-first document preparation.</p>
+          <div className="flex shrink-0 items-start gap-3 text-sidebar-foreground">
+            <DepSlipMark compact className="text-sidebar-primary" />
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.2em]">DepSlip</p>
+              <p className="mt-1 text-sidebar-foreground/55">Local-first document preparation.</p>
+            </div>
           </div>
-          <div className="max-w-3xl">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-accent">Use policy</p>
-            <p className="mt-1">Use only for authorized deposit-slip workflows. Account and MICR values are shown exactly as entered. External requests happen only through configured provider actions; browser print uses the bundled MICR font.</p>
+          <div className="max-w-3xl border-l border-sidebar-border pl-4 sm:pl-5">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-sidebar-primary">Use policy</p>
+            <p className="mt-1 text-sidebar-foreground/60">Use only for authorized deposit-slip workflows. Account and MICR values are shown exactly as entered. External requests happen only through configured provider actions; browser print uses the bundled MICR font.</p>
           </div>
         </div>
       </footer>
