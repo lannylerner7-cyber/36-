@@ -201,7 +201,10 @@ function Home() {
       removeBackground.mutate(
         { data: { imageDataUrl: reader.result } },
         {
-          onSuccess: (result) => setField('bankLogoDataUrl', result.imageDataUrl),
+          onSuccess: (result) => {
+            setField('bankLogoDataUrl', result.imageDataUrl);
+            setLogoMessage('Background removed.');
+          },
           onError: () => {
             void removeLogoBackgroundLocally(reader.result as string)
               .then((cleanedLogo) => {
@@ -425,6 +428,7 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     .map((line) => line.trim())
     .filter(Boolean);
   const bankName = form.bankName || routingLookup?.bankName || 'PAYEE BANK NAME';
+  const bankLogoUrl = form.bankLogoDataUrl || routingLookup?.bankLogoUrl;
   const payeeAddressLines = (form.payeeAddress || 'PAYEE ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
   const payorAddressLines = (form.payorAddress || 'PAYOR ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
 
@@ -434,10 +438,15 @@ function DocumentPreview({ form, isPreviewMode, routingLookup }: { form: SampleD
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
 
     <div className="absolute left-[7.5%] top-[8.3%] w-[52%] text-[clamp(7px,1.55vw,14px)] leading-[1.12]">
-      <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
-      <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
-      {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
-      {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
+          <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
+          {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
+          {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}
+        </div>
+        {bankLogoUrl && <img src={bankLogoUrl} alt={`${bankName} logo`} className="h-[5.5em] w-[18%] shrink-0 object-contain" data-testid="preview-bank-logo" />}
+      </div>
     </div>
 
     <div className="absolute right-[6.3%] top-[7.5%] w-[34%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(6px,1.22vw,11px)] leading-none">
