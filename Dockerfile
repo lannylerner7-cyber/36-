@@ -8,6 +8,7 @@ RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY artifacts/api-server/package.json artifacts/api-server/package.json
+COPY artifacts/document-renderer/package.json artifacts/document-renderer/package.json
 COPY lib/api-spec/package.json lib/api-spec/package.json
 COPY lib/api-client-react/package.json lib/api-client-react/package.json
 COPY lib/api-zod/package.json lib/api-zod/package.json
@@ -17,14 +18,17 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm --filter @workspace/api-server run build
+RUN PORT=20330 BASE_PATH=/ pnpm --filter @workspace/document-renderer run build
 
 FROM node:22-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV WEB_DIST_DIR=/app/artifacts/document-renderer/dist/public
 WORKDIR /app
 
 COPY --from=build /app/artifacts/api-server/dist ./artifacts/api-server/dist
+COPY --from=build /app/artifacts/document-renderer/dist/public ./artifacts/document-renderer/dist/public
 
 EXPOSE 8080
 

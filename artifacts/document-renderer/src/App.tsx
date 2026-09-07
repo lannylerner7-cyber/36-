@@ -7,6 +7,7 @@ import { DepSlipMark } from '@/components/depslip-mark';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import ExplodedPage from '@/pages/exploded';
 import {
   getGetIntegrationStatusQueryKey,
   getGetAdminOverviewQueryKey,
@@ -84,6 +85,7 @@ import {
 import {
   Route,
   Switch,
+  Link,
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
@@ -246,9 +248,10 @@ function CustomerHome() {
           </form>
         </div>
       </section>
+       <PublicSamplePreview />
        <section className="mx-auto grid max-w-[1480px] gap-5 px-5 py-12 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:px-16 lg:py-16">
         <div className="rounded-2xl border border-border bg-card p-7 sm:p-9">
-          <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">02 / Order tracking</p>
+           <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">03 / Order tracking</p>
           <h3 className="mt-3 text-3xl font-semibold tracking-[-.05em]">Already requested access?</h3>
           <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">Look up a manual payment request using the order number and the email used at checkout.</p>
           <form onSubmit={findOrder} className="mt-7 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
@@ -270,23 +273,59 @@ function SubscriptionPackages() {
   const plans = useListPlans({ query: { queryKey: getListPlansQueryKey() } });
   return (
     <div className="rounded-2xl border border-border bg-[hsl(175_18%_86%)] p-7 sm:p-9" data-testid="section-subscription-packages">
-      <p className="font-mono text-[10px] uppercase tracking-[.2em] text-secondary-foreground">03 / Subscription packages</p>
+       <p className="font-mono text-[10px] uppercase tracking-[.2em] text-secondary-foreground">04 / Subscription packages</p>
       <h3 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Choose the right run.</h3>
       <p className="mt-3 text-sm leading-6 text-secondary-foreground/75">Every package gives you a prepared workspace with a defined slip allowance and design capacity.</p>
       <div className="mt-6 space-y-2.5">
         {plans.isLoading ? [1, 2, 3].map((item) => <div key={item} className="h-[74px] animate-pulse rounded-xl bg-secondary-foreground/10" />) : plans.data?.map((plan) => (
-          <div key={plan.id} className="rounded-xl border border-secondary-foreground/15 bg-background/60 p-4" data-testid={`card-home-plan-${plan.id}`}>
+           <Link key={plan.id} href={`/exploded?plan=${plan.id}`} className="block rounded-xl border border-secondary-foreground/15 bg-background/60 p-4 transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-background/80" data-testid={`card-home-plan-${plan.id}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-secondary-foreground">{plan.name}</p>
                 <p className="mt-1 text-xs text-secondary-foreground/70">{plan.slipLimit} slips · {plan.designLimit === -1 ? 'Unlimited designs' : `${plan.designLimit} ${plan.designLimit === 1 ? 'design' : 'designs'}`}</p>
               </div>
-              <p className="font-mono text-sm font-bold text-secondary-foreground">${(plan.priceCents / 100).toFixed(2)} <span className="text-[10px] font-normal">{plan.billing === 'monthly' ? '/ month' : 'one-time'}</span></p>
+               <div className="text-right"><p className="font-mono text-sm font-bold text-secondary-foreground">${(plan.priceCents / 100).toFixed(2)} <span className="text-[10px] font-normal">{plan.billing === 'monthly' ? '/ month' : 'one-time'}</span></p><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[.12em] text-accent">Buy plan <ArrowRight size={12} /></span></div>
             </div>
-          </div>
+           </Link>
         ))}
       </div>
     </div>
+  );
+}
+
+const emptySampleForm: SampleDocumentInput = {
+  payeeName: '',
+  payeeAddress: '',
+  payorName: '',
+  payorAddress: '',
+  bankName: '',
+  bankAddress: '',
+  bankLogoDataUrl: null,
+  accountNumber: '',
+  routingNumber: '',
+  checkNumber: '',
+  date: '',
+  amount: null,
+  memo: '',
+};
+
+function PublicSamplePreview() {
+  return (
+    <section className="border-b border-border bg-[hsl(198_24%_90%)] px-5 py-12 sm:px-8 lg:px-16 lg:py-16" data-testid="section-public-sample">
+      <div className="mx-auto max-w-[1480px]">
+        <div className="mb-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">02 / The finished sheet</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-[-.06em] sm:text-4xl">See the paper before you enter a thing.</h3>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">A blank, full-size sample of the DepSlip output. The watermark is intentional: it shows the geometry without carrying customer, bank, account, or payment information.</p>
+          </div>
+          <Link href="/exploded" className="inline-flex items-center gap-2 self-start rounded-md border border-primary/20 bg-card px-4 py-3 text-xs font-bold text-primary transition hover:border-accent hover:text-accent sm:self-auto" data-testid="link-sample-plans">Choose a package <ArrowRight size={15} /></Link>
+        </div>
+        <div className="rounded-md border border-border/80 bg-[hsl(198_24%_86%)] p-3 shadow-inner sm:p-6 lg:p-10">
+          <DocumentPreview form={emptySampleForm} sample />
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -676,27 +715,29 @@ function TextField({ id, label, value, onChange, placeholder, type = 'text', hel
   return <label className="block" htmlFor={id}><span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">{label}{required && <span className="ml-1 text-accent" aria-hidden="true">*</span>}</span><input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} onFocus={onFocus} onKeyDown={onKeyDown} placeholder={placeholder} inputMode={inputMode} required={required} min={min} step={step} className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground/55 hover:border-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15" data-testid={`input-${id}`} />{helper && <span className="mt-1 block font-mono text-[9px] leading-4 text-muted-foreground">{helper}</span>}</label>;
 }
 
-function DocumentPreview({ form, routingLookup }: { form: SampleDocumentInput; routingLookup?: RoutingLookupResponse }) {
-  const routingNumber = form.routingNumber || '000000000';
-  const accountNumber = form.accountNumber || '000000000000';
-  const checkNumber = form.checkNumber || '00000';
-  const micrValue = `A${routingNumber}A ${accountNumber}C D`;
+function DocumentPreview({ form, routingLookup, sample = false }: { form: SampleDocumentInput; routingLookup?: RoutingLookupResponse; sample?: boolean }) {
+  const emptyValue = sample ? '' : '—';
+  const routingNumber = form.routingNumber || (sample ? '' : '000000000');
+  const accountNumber = form.accountNumber || (sample ? '' : '000000000000');
+  const checkNumber = form.checkNumber || (sample ? '' : '00000');
+  const micrValue = sample ? '' : `A${routingNumber}A ${accountNumber}C D`;
   const amountLabel = form.amount === null || Number.isNaN(form.amount)
-    ? '—'
+    ? emptyValue
     : form.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const addressLines = (form.bankAddress || routingLookup?.bankAddress || 'PO BOX 12345, NEW YORK, NY 10116-1234')
+  const addressLines = (form.bankAddress || routingLookup?.bankAddress || (sample ? '' : 'PO BOX 12345, NEW YORK, NY 10116-1234'))
     .split(',')
     .map((line) => line.trim())
     .filter(Boolean);
-  const bankName = form.bankName || routingLookup?.bankName || 'PAYEE BANK NAME';
+  const bankName = form.bankName || routingLookup?.bankName || (sample ? '' : 'PAYEE BANK NAME');
   const bankLogoUrl = form.bankLogoDataUrl || routingLookup?.bankLogoUrl;
-  const payeeAddressLines = (form.payeeAddress || 'PAYEE ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
-  const payorAddressLines = (form.payorAddress || 'PAYOR ADDRESS').split(',').map((line) => line.trim()).filter(Boolean);
+  const payeeAddressLines = (form.payeeAddress || (sample ? '' : 'PAYEE ADDRESS')).split(',').map((line) => line.trim()).filter(Boolean);
+  const payorAddressLines = (form.payorAddress || (sample ? '' : 'PAYOR ADDRESS')).split(',').map((line) => line.trim()).filter(Boolean);
 
   return <div className="relative mx-auto w-full max-w-[960px] overflow-hidden rounded-[2px] border border-[#b8b8ae] bg-[#f6f6ed] text-[#161714] document-shadow document-slip" style={{ aspectRatio: '8 / 4.5' }} data-testid="preview-document">
     <style>{`@font-face { font-family: "GnuMICR"; src: url("${micrFontData}") format("truetype"); font-weight: normal; font-style: normal; }`}</style>
     <div className="pointer-events-none absolute inset-[2.6%] border border-[#d0d0c7]" />
     <div className="pointer-events-none absolute right-0 top-0 h-full w-[1.6%] perforation-edge" />
+    {sample && <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"><span data-preview-watermark className="rotate-[-18deg] border-y border-[#b18a4a]/45 px-[4%] py-[1.8%] font-mono text-[clamp(9px,2.2vw,22px)] font-semibold uppercase tracking-[.22em] text-[#b18a4a]/45">DepSlip · sample · no live data</span></div>}
 
     <div className={`absolute left-[7.5%] top-[8.3%] w-[52%] text-[clamp(7px,1.55vw,14px)] leading-[1.12] ${bankLogoUrl ? 'pl-[18%]' : ''}`}>
       {bankLogoUrl && <img src={bankLogoUrl} alt={`${bankName} logo`} className="absolute left-0 top-0 h-[5.5em] w-[15%] object-contain" data-testid="preview-bank-logo" />}
@@ -704,35 +745,35 @@ function DocumentPreview({ form, routingLookup }: { form: SampleDocumentInput; r
         <div className="font-serif text-[1.06em] font-bold tracking-[-.02em]">{bankName}</div>
         <div className="font-semibold">ATTN: MAIL-IN DEPOSITS</div>
         {addressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
-        {addressLines.length < 2 && <div>NEW YORK, NY 10116-1234</div>}
+        {addressLines.length < 2 && !sample && <div>NEW YORK, NY 10116-1234</div>}
       </div>
     </div>
 
     <div className="absolute right-[6.3%] top-[7.5%] w-[34%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(6px,1.22vw,11px)] leading-none">
-      <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DATE:</span><span className="px-[5%] py-[5%]">{form.date || '—'}</span></div>
-      <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">ROUTING NUMBER:</span><span className="px-[5%] py-[5%]">{form.routingNumber || '—'}</span></div>
+      <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DATE:</span><span className="px-[5%] py-[5%]">{form.date || emptyValue}</span></div>
+      <div className="grid grid-cols-[38%_62%] border-b border-[#282a25]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">ROUTING NUMBER:</span><span className="px-[5%] py-[5%]">{form.routingNumber || emptyValue}</span></div>
       <div className="grid grid-cols-[38%_62%]"><span className="border-r border-[#282a25] px-[6%] py-[5%] font-semibold">DDA ACCOUNT NUMBER:</span><span className="px-[5%] py-[5%]">{accountNumber}</span></div>
     </div>
 
       <div className="absolute left-[7.5%] top-[38%] h-[51%] w-[62%] border border-[#282a25] bg-[#f8f8f0] text-[clamp(7px,1.42vw,13px)] leading-[1.05]">
         <div className="absolute inset-x-0 top-0 h-[30%] border-b border-[#282a25] px-[2.2%] py-[1.7%]">
           <div className="text-[.78em] font-semibold">REFERENCE / NOTE:</div>
-          <div className="mt-[1.4%] break-words">{form.memo || '—'}</div>
+          <div className="mt-[1.4%] break-words">{form.memo || emptyValue}</div>
         </div>
         <div className="absolute inset-x-0 top-[30%] grid h-[21%] grid-cols-[31%_31%_38%] border-b border-[#282a25]">
           <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK NUMBER:</div><div className="mt-[3%]">{checkNumber}</div></div>
-          <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || '—'}</div></div>
+          <div className="border-r border-[#282a25] px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK DATE:</div><div className="mt-[3%]">{form.date || emptyValue}</div></div>
           <div className="px-[2.2%] py-[2.5%]"><div className="text-[.78em] font-semibold">CHECK AMOUNT:</div><div className="mt-[3%]"><span className="mr-[8%]">$</span>{amountLabel}</div></div>
         </div>
         <div className="absolute inset-x-0 top-[51%] grid h-[49%] grid-cols-[.9fr_1.1fr] border-t border-[#282a25]">
           <div className="border-r border-[#282a25] px-[3.5%] py-[3%]">
             <div className="text-[.78em] font-semibold">PAYEE:</div>
-            <div className="mt-[3%] font-semibold uppercase">{form.payeeName || 'PAYEE NAME'}</div>
+            <div className="mt-[3%] font-semibold uppercase">{form.payeeName || (sample ? '' : 'PAYEE NAME')}</div>
             {payeeAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`} className="uppercase">{line}</div>)}
           </div>
           <div className="px-[3.5%] py-[3%] text-[.86em] leading-[1.12]">
             <div className="font-semibold">PAYOR:</div>
-            <div className="mt-[2%] uppercase">{form.payorName || 'PAYOR NAME'}</div>
+            <div className="mt-[2%] uppercase">{form.payorName || (sample ? '' : 'PAYOR NAME')}</div>
             {payorAddressLines.slice(0, 2).map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
           </div>
         </div>
@@ -763,6 +804,7 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={CustomerHome} />
+        <Route path="/exploded" component={ExplodedPage} />
         <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>

@@ -19,10 +19,5 @@ expertMode = true
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
-[userenv]
-
-[userenv.shared]
-REMOVE_BG_API_KEY = "yB9gB5hVHrKEY31P5KP4EDA4"
-
 [nix]
 channel = "stable-25_05"

@@ -9,7 +9,9 @@ Document Renderer prepares print-accurate deposit-slip previews with protected a
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string (managed automatically by Replit)
+- Required secrets: `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `TOKEN_ENCRYPTION_KEY`
+- Optional secret: `REMOVE_BG_API_KEY` — enables image background removal through the API server
 - Optional secret: `GOOGLE_MAPS_API_KEY` — enables Google Places address suggestions through the API server
 - Optional env: `ROUTING_DIRECTORY_PATH` — path to a current, license-authorized FedACH/FedWire JSON or fixed-width directory file/directory
 - Optional env: `ROUTING_DIRECTORY_EFFECTIVE_DATE` — effective date for the installed directory snapshot
@@ -58,6 +60,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Gotchas
 
 - `GOOGLE_MAPS_API_KEY` is intentionally optional; without it, address autocomplete returns a clear not-configured state.
+- `SESSION_SECRET` is not required by the current session design; session cookies are random values stored as hashes in PostgreSQL.
 - The routing adapter returns bank metadata only when `ROUTING_DIRECTORY_PATH` points to a current authorized directory snapshot; otherwise it returns checksum status with an explicit metadata-unavailable message.
 - Do not bundle the outdated directory files from the Moov repository as production data. The parser supports their documented JSON/fixed-width shapes, but a current authorized file must be supplied separately.
 - Bank logo URLs are UI-only metadata. The optional Google favicon fallback is not an authoritative bank-logo source and must not be used for printed branding.
