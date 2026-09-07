@@ -60,23 +60,24 @@ router.post("/auth/token/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const fingerprint = hashSecret(`${req.ip ?? "unknown"}|${req.headers["user-agent"] ?? "unknown"}`);
+  const tokenHash = hashSecret(parsed.data.token);
+  const fingerprint = hashSecret(`${req.ip ?? "unknown"}|${req.headers["user-agent"] ?? "unknown"}|${tokenHash}`);
   const [attempt] = await db
     .select()
     .from(tokenLoginAttemptsTable)
     .where(eq(tokenLoginAttemptsTable.fingerprint, fingerprint))
     .limit(1);
-  if (attempt?.lockoutUntil && attempt.lockoutUntil > new Date()) {
-    res.status(423).json({ error: "Too many failed attempts. Try again in about one hour." });
-    return;
-  }
 
   const [accessToken] = await db
     .select()
     .from(accessTokensTable)
-    .where(eq(accessTokensTable.tokenHash, hashSecret(parsed.data.token)))
+    .where(eq(accessTokensTable.tokenHash, tokenHash))
     .limit(1);
   if (!accessToken || accessToken.status !== "active") {
+    if (attempt?.lockoutUntil && attempt.lockoutUntil > new Date()) {
+      res.status(423).json({ error: "Too many failed attempts for this token. Try again in about one hour." });
+      return;
+    }
     const failedAttempts = (attempt?.failedAttempts ?? 0) + 1;
     const lockoutUntil = failedAttempts >= 3 ? new Date(Date.now() + 60 * 60 * 1000) : null;
     if (attempt) {
